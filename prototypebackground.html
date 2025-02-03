@@ -37,12 +37,19 @@
         left: 10px;
         font-size: 20px;
       }
+      #fireRateDisplay {
+        position: absolute;
+        top: 70px;
+        left: 10px;
+        font-size: 20px;
+      }
     </style>
   </head>
   <body>
     <canvas id="gameCanvas"></canvas>
     <div id="timer">Time: 0</div>
     <div id="coinCounter">Coins: 0</div>
+    <div id="fireRateDisplay">Fire Rate: 2.00</div>
     <button id="restartButton">Restart</button>
     <script>
       const canvas = document.getElementById("gameCanvas");
@@ -50,6 +57,7 @@
       const restartButton = document.getElementById("restartButton");
       const timerElement = document.getElementById("timer");
       const coinCounterElement = document.getElementById("coinCounter");
+      const fireRateDisplayElement = document.getElementById("fireRateDisplay");
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
@@ -59,6 +67,7 @@
         enemy: new Image(),
         coin: new Image(),
         background: new Image(),
+        tower: new Image(),
       };
 
       // Set image sources
@@ -66,6 +75,7 @@
       images.enemy.src = "enemy.png";
       images.coin.src = "coin.png";
       images.background.src = "background.png";
+      images.tower.src = "tower.png"; // Add a tower image
 
       // Player
       const player = {
@@ -94,6 +104,12 @@
       const coins = [];
       const coinSize = 20; // Adjust size based on your image
       let coinCount = 0;
+
+      // Towers
+      const towers = [];
+      const towerFireRate = 5; // Fixed fire rate for towers
+      const towerRange = 200; // Range of the tower
+      const towerSize = 40; // Adjust size based on your image
 
       // Game state
       let gameOver = false;
@@ -220,6 +236,50 @@
           }
         });
 
+        // Draw and update towers
+        towers.forEach((tower, towerIndex) => {
+          ctx.drawImage(
+            images.tower,
+            tower.x - towerSize / 2,
+            tower.y - towerSize / 2,
+            towerSize,
+            towerSize,
+          );
+
+          // Find the nearest enemy within range
+          let nearestEnemy = null;
+          let nearestDistance = towerRange;
+          enemies.forEach((enemy) => {
+            const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
+            if (dist < nearestDistance) {
+              nearestEnemy = enemy;
+              nearestDistance = dist;
+            }
+          });
+
+          // Shoot at the nearest enemy
+          if (nearestEnemy) {
+            tower.timeSinceLastShot += frameInterval / 1000; // Convert to seconds
+            const timeBetweenShots = 1 / towerFireRate;
+            if (tower.timeSinceLastShot >= timeBetweenShots) {
+              const angle = Math.atan2(
+                nearestEnemy.y - tower.y,
+                nearestEnemy.x - tower.x,
+              );
+              const vx = Math.cos(angle) * projectileSpeed;
+              const vy = Math.sin(angle) * projectileSpeed;
+              projectiles.push({
+                x: tower.x,
+                y: tower.y,
+                size: 5,
+                vx,
+                vy,
+              });
+              tower.timeSinceLastShot = 0; // Reset shot timer
+            }
+          }
+        });
+
         // Shooting logic
         timeSinceLastShot += frameInterval / 1000; // Convert to seconds
         const timeBetweenShots = 1 / fireRate; // Time between each spawn
@@ -227,6 +287,9 @@
           shootProjectile();
           timeSinceLastShot = 0; // Reset spawn timer
         }
+
+        // Update fire rate display
+        fireRateDisplayElement.textContent = `Fire Rate: ${fireRate.toFixed(2)}`;
 
         requestAnimationFrame(gameLoop);
       }
@@ -278,6 +341,22 @@
             console.log(`Fire rate upgraded to: ${fireRate.toFixed(2)}`);
           } else {
             console.log("Not enough coins to upgrade!");
+          }
+        }
+
+        // Place tower when '2' is pressed
+        if (e.key === "2") {
+          if (coinCount >= 10) {
+            coinCount -= 10;
+            towers.push({
+              x: player.x,
+              y: player.y,
+              timeSinceLastShot: 0,
+            });
+            coinCounterElement.textContent = `Coins: ${coinCount}`;
+            console.log("Tower placed!");
+          } else {
+            console.log("Not enough coins to place a tower!");
           }
         }
       });
@@ -339,6 +418,7 @@
         enemies.length = 0;
         projectiles.length = 0;
         coins.length = 0;
+        towers.length = 0;
         coinCount = 0;
         coinCounterElement.textContent = `Coins: ${coinCount}`;
         spawnRate = 1; // Reset spawn rate
