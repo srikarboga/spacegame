@@ -53,13 +53,26 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
+      // Load images
+      const images = {
+        player: new Image(),
+        enemy: new Image(),
+        coin: new Image(),
+        background: new Image(),
+      };
+
+      // Set image sources
+      images.player.src = "player.png";
+      images.enemy.src = "enemy.png";
+      images.coin.src = "coin.png";
+      images.background.src = "background.png";
+
       // Player
       const player = {
         x: canvas.width / 2,
         y: canvas.height / 2,
-        size: 20,
+        size: 40, // Adjust size based on your image
         speed: 5,
-        color: "blue",
       };
 
       // Projectiles
@@ -71,7 +84,7 @@
 
       // Enemies
       const enemies = [];
-      const enemySize = 15;
+      const enemySize = 30; // Adjust size based on your image
       let enemySpeed = 2; // Increased starting speed
       let spawnRate = 1; // Initial spawn rate (5 enemies per second)
       let timeSinceLastSpawn = 0; // Track time since last spawn
@@ -79,6 +92,7 @@
 
       // Coins
       const coins = [];
+      const coinSize = 20; // Adjust size based on your image
       let coinCount = 0;
 
       // Game state
@@ -110,9 +124,12 @@
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Draw background
+        ctx.drawImage(images.background, 0, 0, canvas.width, canvas.height);
+
         // Draw player
-        ctx.fillStyle = player.color;
-        ctx.fillRect(
+        ctx.drawImage(
+          images.player,
           player.x - player.size / 2,
           player.y - player.size / 2,
           player.size,
@@ -151,7 +168,6 @@
         }
 
         // Draw and move enemies
-        ctx.fillStyle = "red";
         enemies.forEach((enemy, index) => {
           // Move enemy toward player
           const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
@@ -159,16 +175,17 @@
           enemy.y += Math.sin(angle) * enemySpeed;
 
           // Draw enemy
-          ctx.fillRect(
-            enemy.x - enemy.size / 2,
-            enemy.y - enemy.size / 2,
-            enemy.size,
-            enemy.size,
+          ctx.drawImage(
+            images.enemy,
+            enemy.x - enemySize / 2,
+            enemy.y - enemySize / 2,
+            enemySize,
+            enemySize,
           );
 
           // Check for collision with player
           const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-          if (dist < player.size / 2 + enemy.size / 2) {
+          if (dist < player.size / 2 + enemySize / 2) {
             gameOver = true;
             restartButton.style.display = "block";
           }
@@ -176,7 +193,7 @@
           // Check for collision with projectiles
           projectiles.forEach((proj, projIndex) => {
             const projDist = Math.hypot(proj.x - enemy.x, proj.y - enemy.y);
-            if (projDist < proj.size / 2 + enemy.size / 2) {
+            if (projDist < proj.size / 2 + enemySize / 2) {
               enemies.splice(index, 1);
               projectiles.splice(projIndex, 1);
               dropCoin(enemy.x, enemy.y); // Drop a coin when enemy dies
@@ -185,15 +202,18 @@
         });
 
         // Draw and collect coins
-        ctx.fillStyle = "gold";
         coins.forEach((coin, index) => {
-          ctx.beginPath();
-          ctx.arc(coin.x, coin.y, coin.size / 2, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.drawImage(
+            images.coin,
+            coin.x - coinSize / 2,
+            coin.y - coinSize / 2,
+            coinSize,
+            coinSize,
+          );
 
           // Check for collision with player
           const dist = Math.hypot(player.x - coin.x, player.y - coin.y);
-          if (dist < player.size / 2 + coin.size / 2) {
+          if (dist < player.size / 2 + coinSize / 2) {
             coins.splice(index, 1);
             coinCount++;
             coinCounterElement.textContent = `Coins: ${coinCount}`;
@@ -233,12 +253,12 @@
             y = Math.random() * canvas.height;
             break;
         }
-        enemies.push({ x, y, size: enemySize });
+        enemies.push({ x, y });
       }
 
       // Drop a coin at the specified position
       function dropCoin(x, y) {
-        coins.push({ x, y, size: 10 });
+        coins.push({ x, y });
       }
 
       // Player movement
