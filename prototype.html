@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Space Game</title>
+    <title>Simple Vampire Survivors Clone</title>
     <style>
       body {
         margin: 0;
@@ -52,6 +52,19 @@
     <div id="fireRateDisplay">Fire Rate: 2.00</div>
     <button id="restartButton">Restart</button>
     <script>
+      const bgMusic = new Audio("background-music.mp3"); // Replace with your file
+      bgMusic.loop = true;
+      bgMusic.volume = 0.5; // Adjust volume as needed
+
+      // Function to start music after user interaction
+      function startMusic() {
+        bgMusic.play().catch((error) => {
+          console.log("Autoplay blocked, waiting for user interaction.", error);
+        });
+      }
+      document.addEventListener("click", startMusic);
+      document.addEventListener("keydown", startMusic);
+
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
       const restartButton = document.getElementById("restartButton");
@@ -121,6 +134,14 @@
       const frameInterval = 1000 / fps;
       let lastFrameTime = 0;
 
+      // Mouse position
+      let mouseX = 0,
+        mouseY = 0;
+      window.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
       // Game Loop
       function gameLoop(timestamp) {
         if (gameOver) return;
@@ -143,14 +164,19 @@
         // Draw background
         ctx.drawImage(images.background, 0, 0, canvas.width, canvas.height);
 
-        // Draw player
+        // Draw player (rotated to face the mouse)
+        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+        ctx.save(); // Save the current canvas state
+        ctx.translate(player.x, player.y); // Move the origin to the player's position
+        ctx.rotate(angle); // Rotate the canvas
         ctx.drawImage(
           images.player,
-          player.x - player.size / 2,
-          player.y - player.size / 2,
+          -player.size / 2, // Adjust for the new origin
+          -player.size / 2,
           player.size,
           player.size,
         );
+        ctx.restore(); // Restore the canvas state
 
         // Draw projectiles
         ctx.fillStyle = "yellow";
@@ -387,14 +413,6 @@
           vy,
         });
       }
-
-      // Mouse position
-      let mouseX = 0,
-        mouseY = 0;
-      window.addEventListener("mousemove", (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-      });
 
       // Hold to shoot
       window.addEventListener("mousedown", (e) => {
