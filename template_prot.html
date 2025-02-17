@@ -168,7 +168,7 @@
 
     <div id="settings-screen" class="screen">
       <div class="container">
-        <h2>Settings</h2>
+        <h2>There are no settings at the moment</h2>
         <button id="settings-back-button">Back</button>
       </div>
     </div>
@@ -328,6 +328,10 @@
             this.mouseX = 0;
             this.mouseY = 0;
 
+            this.touchX = 0;
+            this.touchY = 0;
+            this.isTouching = false;
+
             // Timing
             this.timeSinceLastSpawn = 0;
             this.timeSinceLastShot = 0;
@@ -382,6 +386,44 @@
               if (e.key === "s") this.keys.s = false;
               if (e.key === "d") this.keys.d = false;
             });
+
+            window.addEventListener(
+              "touchstart",
+              (e) => {
+                e.preventDefault();
+                this.isTouching = true;
+                this.isShooting = true;
+                const touch = e.touches[0];
+                this.touchX = touch.clientX;
+                this.touchY = touch.clientY;
+                this.mouseX = touch.clientX; // Update mouse position for aiming
+                this.mouseY = touch.clientY;
+              },
+              { passive: false },
+            );
+
+            window.addEventListener(
+              "touchmove",
+              (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                this.touchX = touch.clientX;
+                this.touchY = touch.clientY;
+                this.mouseX = touch.clientX; // Update mouse position for aiming
+                this.mouseY = touch.clientY;
+              },
+              { passive: false },
+            );
+
+            window.addEventListener(
+              "touchend",
+              (e) => {
+                e.preventDefault();
+                this.isTouching = false;
+                this.isShooting = false;
+              },
+              { passive: false },
+            );
           }
 
           reset() {
@@ -705,49 +747,56 @@
           }
 
           assignButtons() {
-            document
-              .getElementById("play-button")
-              .addEventListener("click", () => this.startGame());
-            document
-              .getElementById("settings-button")
-              .addEventListener("click", () => this.ui.settings());
-            document
-              .getElementById("instructions-button")
-              .addEventListener("click", () => this.ui.instructions());
-            document
-              .getElementById("play-again-button")
-              .addEventListener("click", () => this.startGame());
-            document
-              .getElementById("settings-back-button")
-              .addEventListener("click", () => this.ui.mainMenu());
-            document
-              .getElementById("instructions-back-button")
-              .addEventListener("click", () => this.ui.mainMenu());
-            document
-              .getElementById("main-menu-button")
-              .addEventListener("click", () => this.ui.mainMenu());
-            document
-              .getElementById("game-menu-button")
-              .addEventListener("click", () => this.ui.mainMenu());
-            document
-              .getElementById("game-restart-button")
-              .addEventListener("click", () => this.startGame());
-            document
-              .getElementById("game-instructions-button")
-              .addEventListener("click", () => {
-                this.pause();
-                this.ui.instructions();
-                document
-                  .getElementById("instructions-back-button")
-                  .addEventListener(
-                    "click",
-                    () => {
-                      this.ui.swapToScreen(this.ui.gameScreen);
-                      this.resume();
-                    },
-                    { once: true },
-                  );
-              });
+            const addButtonListener = (id, callback) => {
+              const button = document.getElementById(id);
+              if (button) {
+                button.addEventListener("click", callback);
+                button.addEventListener(
+                  "touchstart",
+                  (e) => {
+                    e.preventDefault();
+                    callback();
+                  },
+                  { passive: false },
+                );
+              }
+            };
+
+            addButtonListener("play-button", () => this.startGame());
+            addButtonListener("settings-button", () => this.ui.settings());
+            addButtonListener("instructions-button", () =>
+              this.ui.instructions(),
+            );
+            addButtonListener("play-again-button", () => this.startGame());
+            addButtonListener("settings-back-button", () => this.ui.mainMenu());
+            addButtonListener("instructions-back-button", () =>
+              this.ui.mainMenu(),
+            );
+            addButtonListener("main-menu-button", () => this.ui.mainMenu());
+            addButtonListener("game-menu-button", () => this.ui.mainMenu());
+            addButtonListener("game-restart-button", () => this.startGame());
+            addButtonListener("game-instructions-button", () => {
+              this.pause();
+              this.ui.instructions();
+              const backButton = document.getElementById(
+                "instructions-back-button",
+              );
+              const handler = () => {
+                this.ui.swapToScreen(this.ui.gameScreen);
+                this.resume();
+                backButton.removeEventListener("click", handler);
+                backButton.removeEventListener("touchstart", handler);
+              };
+              backButton.addEventListener("click", handler);
+              backButton.addEventListener(
+                "touchstart",
+                (e) => {
+                  e.preventDefault();
+                  handler();
+                },
+                { passive: false },
+              );
+            });
           }
         }
 
