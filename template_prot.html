@@ -8,13 +8,21 @@
     />
     <title>Spacescape</title>
     <style>
-      body,
+      body{
+        img.responsive {
+            max-width: 100%; 
+            max-height: 300px; 
+            display: block; 
+            margin: auto; 
+        }
+      }
       html {
         margin: 0;
         padding: 0;
         height: 100%;
         font-family: "Orbitron", sans-serif;
         background-color: #1a1a2e;
+        
         color: #ffffff;
         overflow: hidden;
       }
@@ -31,12 +39,14 @@
           #16213e 50%,
           #0f3460 100%
         );
+        
       }
       .screen.active {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        
       }
       canvas {
         display: block;
@@ -145,6 +155,9 @@
     </style>
   </head>
   <body>
+    <img src="loadingscreenimageSpaceEscape.png" 
+        alt="Responsive Image"
+        class="responsive">
     <div id="game-controls">
       <button id="game-menu-button">Menu</button>
       <button id="game-restart-button">Restart</button>
@@ -330,9 +343,9 @@
             this.towers = [];
 
             // Game settings
-            this.projectileSpeed = 7;
+            this.projectileSpeed = 8;
             this.enemySize = 30;
-            this.enemySpeed = 3;
+            this.enemySpeed = 2;
             this.spawnRate = 1;
             this.coinSize = 20;
             this.towerSize = 50;
@@ -528,6 +541,8 @@
                 x: this.player.x,
                 y: this.player.y,
                 timeSinceLastShot: 0,
+                //added health, where each health is equal to 1 green lv. 1 enemy
+                health: 5
               });
             }
           }
@@ -616,13 +631,30 @@
 
             // Draw and update enemies
             this.enemies.forEach((enemy, index) => {
+              //see if player or turret closer, default player
+              let target = this.player
+              let closestDist = Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y);
+      
+              // Find nearest tower
+              if (this.towers.length > 0){
+                this.towers.forEach(tower => {
+                  let towerDist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
+                  if (towerDist < closestDist) {
+                    target = tower;
+                    closestDist = towerDist;
+                  }
+                });
+              }
+              
               const angle = Math.atan2(
-                this.player.y - enemy.y,
-                this.player.x - enemy.x,
+                target.y - enemy.y,
+                target.x - enemy.x,
               );
+              console.log(angle)
               enemy.x += Math.cos(angle) * this.enemySpeed;
               enemy.y += Math.sin(angle) * this.enemySpeed;
-
+              
+              
               ctx.drawImage(
                 this.images.enemy,
                 enemy.x - this.enemySize / 2,
@@ -631,7 +663,7 @@
                 this.enemySize,
               );
 
-              // Check collisions
+              // Check collisions player
               const dist = Math.hypot(
                 this.player.x - enemy.x,
                 this.player.y - enemy.y,
@@ -640,6 +672,20 @@
                 this.gameOver = true;
                 this.ui.endGame(backgroundMusic);
               }
+               // Check collision with towers
+              if (this.towers.length > 0){
+                this.towers.forEach((tower, tIndex) => {
+                  const towerdist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
+                  if ( towerdist < this.towerSize / 2 + this.enemySize / 2) {
+                    tower.health -= 1; // Damage tower
+                    if (tower.health <= 0) {
+                      this.towers.splice(tIndex, 1); // Remove destroyed tower
+                    }
+                    this.enemies.splice(index, 1); // Remove enemy after attack
+                  }
+                });
+              }
+
 
               this.projectiles.forEach((proj, projIndex) => {
                 const projDist = Math.hypot(proj.x - enemy.x, proj.y - enemy.y);
@@ -673,6 +719,7 @@
 
             // Draw towers
             this.towers.forEach((tower) => {
+             
               ctx.drawImage(
                 this.images.tower,
                 tower.x - this.towerSize / 2,
@@ -680,6 +727,11 @@
                 this.towerSize,
                 this.towerSize,
               );
+              ctx.fillStyle = "red";
+              ctx.fillRect(tower.x - 25, tower.y - 35, 50 * (tower.health / 5), 5); // Health bar
+              ctx.fillStyle = "white";
+              ctx.font = "14px Arial";
+              ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
 
               let nearestEnemy = null;
               let nearestDistance = this.towerRange;
