@@ -217,14 +217,32 @@
       
       </div>
     </div>
-
+    
+    <!-- ALL AUDIO HTML -->
+     <!-- game music -->
+    <audio id="lobby-music" loop>
+      <source src="Cosmic Shadows.mp3" type="audio/mpeg" />
+    </audio>
     <audio id="background-music" loop>
       <source src="background-music.mp3" type="audio/mpeg" />
     </audio>
-
     <audio id="gameover-music">
-      <source src="GameOverSound.wav"  type="audio/wav"> 
+      <source src="GameOverSound2.wav"  type="audio/wav"> 
     </audio>
+
+    <!-- NEED TO GENERATE THESE SOUNDS -->
+    <!-- turret -->
+    <audio id="turret-place-sound" src="turret_place.mp3"></audio>
+    <audio id="turret-death-sound" src="turret_death.mp3"></audio>
+    <audio id="turret-shoot-sound" src="turret_shoot.mp3"></audio>
+    <!-- ship -->
+    <audio id="ship-move-sound" src="ship_move.mp3" loop></audio>
+    <audio id="ship-shoot-sound" src="ship_shoot.mp3"></audio>
+    <audio id="ship-destroy-sound" src="ship_destroy.mp3"></audio>
+    <audio id="attack-upgrade-sound" src="attack_upgrade.mp3"></audio>
+    <!-- enemy -->
+    <audio id="enemy-death-sound" src="enemy_death.mp3"></audio>
+    
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -247,6 +265,21 @@
             this.coinCounterElement = document.getElementById("coinCounter");
             this.fireRateDisplayElement =
               document.getElementById("fireRateDisplay");
+            
+            //Load sound effects
+            this.sounds = {
+              //turret sounds
+              turretPlacement: document.getElementById("turret-place-sound"),
+              turretDeath: document.getElementById("turret-death-sound"),
+              turretShoot: document.getElementById("turret-shoot-sound"),
+              //ship sounds
+              shipMove: document.getElementById("ship-move-sound"),
+              shipShoot: document.getElementById("ship-shoot-sound"),
+              shipDestroy: document.getElementById("ship-destroy-sound"),
+              attackUpgrade: document.getElementById("attack-upgrade-sound"),
+              //enemy sounds
+              enemyDeath: document.getElementById("enemy-death-sound"),
+            };
           }
 
           swapToScreen(screen) {
@@ -361,6 +394,8 @@
             this.touchX = 0;
             this.touchY = 0;
             this.isTouching = false;
+            this.isMoving = false;
+            this.moveSoundPlaying = false;
 
             // Timing
             this.timeSinceLastSpawn = 0;
@@ -473,14 +508,34 @@
           }
 
           movePlayer() {
-            if (this.keys.w && this.player.y > 0)
+            this.isMoving = false
+            if (this.keys.w && this.player.y > 0) {
               this.player.y -= this.player.speed;
-            if (this.keys.a && this.player.x > 0)
+              this.isMoving = true;
+            }
+            if (this.keys.a && this.player.x > 0) {
               this.player.x -= this.player.speed;
-            if (this.keys.s && this.player.y < this.ui.canvas.height)
+              this.isMoving = true;
+            }
+            if (this.keys.s && this.player.y < this.ui.canvas.height){
               this.player.y += this.player.speed;
-            if (this.keys.d && this.player.x < this.ui.canvas.width)
+              this.isMoving = true;
+            }
+            if (this.keys.d && this.player.x < this.ui.canvas.width) {
               this.player.x += this.player.speed;
+              this.isMoving = true;
+            }
+            // **Ship Moving Sound**
+            if (this.isMoving && !this.moveSoundPlaying) {
+              this.ui.sounds.shipMove.play().catch((error) => {
+                console.error("Error playing ship movement sound:", error);
+              });
+              this.moveSoundPlaying = true;
+            } else if (!this.isMoving) {
+              this.ui.sounds.shipMove.pause();
+              this.ui.sounds.shipMove.currentTime = 0;
+              this.moveSoundPlaying = false;
+            }
           }
 
           shootProjectile() {
@@ -496,6 +551,11 @@
               size: 5,
               vx,
               vy,
+            });
+
+            // **Ship Shooting Sound**
+            this.ui.sounds.shipShoot.play().catch((error) => {
+              console.error("Error playing ship shooting sound:", error);
             });
           }
 
@@ -531,6 +591,11 @@
             if (this.coinCount >= 5) {
               this.coinCount -= 5;
               this.fireRate *= 1.1;
+
+               // **Attack Speed Upgrade Sound**
+              this.ui.sounds.attackUpgrade.play().catch((error) => {
+                console.error("Error playing attack upgrade sound:", error);
+              });
             }
           }
 
@@ -543,6 +608,10 @@
                 timeSinceLastShot: 0,
                 //added health, where each health is equal to 1 green lv. 1 enemy
                 health: 5
+              });
+              // **Turret Placement Sound**
+              this.ui.sounds.turretPlacement.play().catch((error) => {
+                console.error("Error playing turret placement sound:", error);
               });
             }
           }
@@ -671,6 +740,11 @@
               if (dist < this.player.size / 2 + this.enemySize / 2) {
                 this.gameOver = true;
                 this.ui.endGame(backgroundMusic);
+
+                // **Ship Destruction Sound**
+                this.ui.sounds.shipDestroy.play().catch((error) => {
+                  console.error("Error playing ship destruction sound:", error);
+                });
               }
                // Check collision with towers
               if (this.towers.length > 0){
@@ -680,6 +754,10 @@
                     tower.health -= 1; // Damage tower
                     if (tower.health <= 0) {
                       this.towers.splice(tIndex, 1); // Remove destroyed tower
+                       // **Turret Death Sound**
+                      this.ui.sounds.turretDeath.play().catch((error) => {
+                        console.error("Error playing turret death sound:", error);
+                      });
                     }
                     this.enemies.splice(index, 1); // Remove enemy after attack
                   }
@@ -692,6 +770,12 @@
                 if (projDist < proj.size / 2 + this.enemySize / 2) {
                   this.enemies.splice(index, 1);
                   this.projectiles.splice(projIndex, 1);
+                  
+                  // **Enemy Death Sound**
+                  this.ui.sounds.enemyDeath.play().catch((error) => {
+                    console.error("Error playing enemy death sound:", error);
+                  });
+
                   this.dropCoin(enemy.x, enemy.y);
                 }
               });
@@ -758,6 +842,10 @@
                     size: 5,
                     vx,
                     vy,
+                  });
+                  // **Turret Shooting Sound**
+                  this.ui.sounds.turretShoot.play().catch((error) => {
+                    console.error("Error playing turret shooting sound:", error);
                   });
                   tower.timeSinceLastShot = 0;
                 }
