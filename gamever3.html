@@ -869,6 +869,34 @@
               }
             });
 
+            //Tower shooting
+            this.towers.forEach((tower, towerIndex) => {
+              let nearestEnemy = null;
+              let nearestDistance = this.towerRange; // Default tower range (e.g., 100 pixels)
+              this.enemies.forEach((enemy) => {
+                  const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
+                  if (dist < nearestDistance) {
+                      nearestEnemy = enemy;
+                      nearestDistance = dist;
+                  }
+              });
+
+              // If an enemy is within range, update timer and fire if ready.
+              if (nearestEnemy) {
+                  tower.timeSinceLastShot += this.frameInterval / 1000;
+                  const towerFireRate = this.solarFlare.active ? this.towerFireRate / 2 : this.towerFireRate;
+                  if (tower.timeSinceLastShot >= 1 / towerFireRate) {
+                      const angle = Math.atan2(nearestEnemy.y - tower.y, nearestEnemy.x - tower.x);
+                      const vx = Math.cos(angle) * this.projectileSpeed;
+                      const vy = Math.sin(angle) * this.projectileSpeed;
+                      this.projectiles.push({ x: tower.x, y: tower.y, size: 5, vx, vy, source: 'turret' });
+                      this.ui.sounds.turretShoot.play().catch((error) => console.error("Error playing turret shoot sound:", error));
+                      console.log('Tower ${towerIndex} fired at enemy at (${nearestEnemy.x.toFixed(1)}, ${nearestEnemy.y.toFixed(1)})');
+                      tower.timeSinceLastShot = 0;
+                  }
+              }
+            });
+
             this.ui.updateHUD(this.elapsedTime, this.coinCount, currentFireRate, this.playerHealth, hazardWarning);
         }
 
@@ -1017,34 +1045,13 @@
             // Draw towers
             const towersToRemoveFinal = []; // Collect any additional tower removals from other hazards
             this.towers.forEach((tower) => {
-                ctx.drawImage(this.images.tower, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
-                ctx.fillStyle = "red";
-                ctx.fillRect(tower.x - 25, tower.y - 35, 50 * (tower.health / 5), 5);
-                ctx.fillStyle = "white";
-                ctx.font = "14px Arial";
-                ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
-
-                let nearestEnemy = null;
-                let nearestDistance = this.towerRange;
-                this.enemies.forEach((enemy) => {
-                    const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
-                    if (dist < nearestDistance) { nearestEnemy = enemy; nearestDistance = dist; }
-                });
-
-                if (nearestEnemy) {
-                    tower.timeSinceLastShot += this.frameInterval / 1000;
-                    const towerFireRate = this.solarFlare.active ? this.towerFireRate / 2 : this.towerFireRate;
-                    if (tower.timeSinceLastShot >= 1 / towerFireRate) {
-                        const angle = Math.atan2(nearestEnemy.y - tower.y, nearestEnemy.x - tower.x);
-                        const vx = Math.cos(angle) * this.projectileSpeed;
-                        const vy = Math.sin(angle) * this.projectileSpeed;
-                        this.projectiles.push({ x: tower.x, y: tower.y, size: 5, vx, vy });
-                        this.ui.sounds.turretShoot.play().catch((error) => console.error("Error playing turret shoot sound:", error));
-                        tower.timeSinceLastShot = 0;
-                    }
-                }
+              ctx.drawImage(this.images.tower, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
+              ctx.fillStyle = "red";
+              ctx.fillRect(tower.x - 25, tower.y - 35, 50 * (tower.health / 5), 5);
+              ctx.fillStyle = "white";
+              ctx.font = "14px Arial";
+              ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
             });
-
             // Draw asteroids
             const asteroidsToRemove = [];
             this.asteroids.forEach((asteroid, index) => {
