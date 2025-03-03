@@ -57,6 +57,96 @@
         #game-title { font-size: 2em; }
         button { width: 80%; font-size: 16px; }
         #game-controls button { font-size: 12px; padding: 6px 12px; }
+
+      /* Joystick Styles */
+      #joystick-container {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 100px;
+        height: 100px;
+        display: none; /* Hidden by default, shown during game */
+      }
+
+      #joystick-base {
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        position: absolute;
+      }
+
+      #joystick-handle {
+        width: 40px;
+        height: 40px;
+        background: #e94560;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: none; /* Disable transition for smooth movement */
+      }
+
+      /* Action Buttons Styles */
+      #action-buttons {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        display: none; /* Hidden by default, shown during game */
+      }
+
+      .action-btn {
+        background: linear-gradient(135deg, #283c86 0%, #45a247 100%);
+        border: 2px solid #fff;
+        border-radius: 8px;
+        color: #fff;
+        font-family: "Orbitron", sans-serif;
+        font-size: 14px;
+        padding: 10px 20px;
+        text-transform: uppercase;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        touch-action: none; /* Prevent default touch behavior */
+      }
+
+      .action-btn:hover {
+        background: linear-gradient(135deg, #45a247 0%, #283c86 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .action-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Show controls when game-screen is active */
+      #game-screen.active #joystick-container,
+      #game-screen.active #action-buttons {
+        display: block;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 600px) {
+        #joystick-container {
+          width: 80px;
+          height: 80px;
+        }
+        #joystick-handle {
+          width: 30px;
+          height: 30px;
+        }
+        .action-btn {
+          font-size: 12px;
+          padding: 8px 15px;
+        }
+      }
       }
     </style>
   </head>
@@ -111,6 +201,16 @@
     <div id="game-screen" class="screen">
       <div id="game-container">
         <canvas id="gameCanvas"></canvas>
+        <!-- Joystick -->
+        <div id="joystick-container">
+          <div id="joystick-base"></div>
+          <div id="joystick-handle"></div>
+        </div>
+        <!-- Action Buttons -->
+        <div id="action-buttons">
+          <button id="turret-button" class="action-btn">Place Turret (10)</button>
+          <button id="upgrade-button" class="action-btn">Upgrade Fire Rate (5)</button>
+        </div>
       </div>
     </div>
 
@@ -129,7 +229,7 @@
     <audio id="gameover-music"><source src="GameOverSound2.wav" type="audio/wav"></audio>
     <audio id="turret-place-sound" src="turret_place.wav"></audio>
     <audio id="turret-death-sound" src="turret_death.mp3"></audio>
-    <audio id="turret-shoot-sound" src="turret_shoot.mp3"></audio>
+    <audio id="turret-shoot-sound" src="ship_shoot.wav"></audio>
     <audio id="ship-move-sound" src="ship_move.mp3" loop></audio>
     <audio id="ship-shoot-sound" src="ship_shoot.wav"></audio>
     <audio id="ship-destroy-sound" src="ship_destroy.mp3"></audio>
@@ -160,6 +260,10 @@
             this.healthDisplayElement = document.getElementById("healthDisplay");
             this.hazardWarningElement = document.getElementById("hazardWarning");
 
+            this.joystickContainer = document.getElementById("joystick-container");
+            this.joystickHandle = document.getElementById("joystick-handle");
+            this.actionButtons = document.getElementById("action-buttons");
+
             this.sounds = {
               turretPlacement: document.getElementById("turret-place-sound"),
               turretDeath: document.getElementById("turret-death-sound"),
@@ -186,11 +290,20 @@
             if (screen.id === "game-screen") {
               this.hud.style.display = "block";
               this.gameControls.style.display = "block";
+              this.joystickContainer.style.display = "block"; // Show joystick
+              this.actionButtons.style.display = "flex"; // Show buttons
               this.resizeCanvas();
             } else {
               this.hud.style.display = "none";
               this.gameControls.style.display = "none";
+              this.joystickContainer.style.display = "none"; // Hide joystick
+              this.actionButtons.style.display = "none"; // Hide buttons
             }
+          }
+
+          resetJoystick() {
+            this.joystickHandle.style.left = "50%";
+            this.joystickHandle.style.top = "50%";
           }
 
           resizeCanvas() {
@@ -280,6 +393,10 @@
             this.fps = 60;
             this.frameInterval = 1000 / this.fps;
 
+            this.joystickActive = false;
+            this.joystickX = 0;
+            this.joystickY = 0;
+
             this.images = {
               player: new Image(), 
               zephyrScout: new Image(), // Zephyr Scout image
@@ -351,6 +468,58 @@
               this.isTouching = false;
               this.isShooting = false;
             }, { passive: false });
+
+            const joystickBase = document.getElementById("joystick-base");
+            const joystickHandle = this.ui.joystickHandle;
+
+            joystickBase.addEventListener("touchstart", (e) => {
+              e.preventDefault();
+              this.joystickActive = true;
+            }, { passive: false });
+
+            joystickBase.addEventListener("touchmove", (e) => {
+              e.preventDefault();
+              if (!this.joystickActive) return;
+              const touch = e.touches[0];
+              const rect = joystickBase.getBoundingClientRect();
+              let dx = touch.clientX - (rect.left + rect.width / 2);
+              let dy = touch.clientY - (rect.top + rect.height / 2);
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const maxDistance = rect.width / 2 - joystickHandle.offsetWidth / 2;
+
+              if (distance > maxDistance) {
+                dx = (dx / distance) * maxDistance;
+                dy = (dy / distance) * maxDistance;
+              }
+
+              joystickHandle.style.left = `${50 + (dx / rect.width) * 100}%`;
+              joystickHandle.style.top = `${50 + (dy / rect.height) * 100}%`;
+
+              this.joystickX = dx / maxDistance;
+              this.joystickY = dy / maxDistance;
+            }, { passive: false });
+
+            joystickBase.addEventListener("touchend", (e) => {
+              e.preventDefault();
+              this.joystickActive = false;
+              this.joystickX = 0;
+              this.joystickY = 0;
+              this.ui.resetJoystick();
+              this.ui.sounds.shipMove.pause();
+              this.ui.sounds.shipMove.currentTime = 0;
+              this.moveSoundPlaying = false;
+            }, { passive: false });
+
+            // Action button listeners
+            document.getElementById("turret-button").addEventListener("touchstart", (e) => {
+              e.preventDefault();
+              this.placeTower();
+            }, { passive: false });
+
+            document.getElementById("upgrade-button").addEventListener("touchstart", (e) => {
+              e.preventDefault();
+              this.upgradeFireRate();
+            }, { passive: false });
           }
 
           reset() {
@@ -374,14 +543,31 @@
             this.timeSinceLastHazard = 0;
             this.timeSinceLastNebulaStalker = 0; // MARK: Reset Nebula Stalker Spawn Timer
             this.timeSinceLastZephyrScout = 0;   // MARK: Reset Zephyr Scout Spawn Timer
+
+            this.joystickActive = false;
+            this.joystickX = 0;
+            this.joystickY = 0;
+            this.ui.resetJoystick();
           }
 
           movePlayer() {
             this.isMoving = false;
+            // Keyboard movement
             if (this.keys.w && this.player.y > 0) { this.player.y -= this.player.speed; this.isMoving = true; }
             if (this.keys.a && this.player.x > 0) { this.player.x -= this.player.speed; this.isMoving = true; }
             if (this.keys.s && this.player.y < this.ui.canvas.height) { this.player.y += this.player.speed; this.isMoving = true; }
             if (this.keys.d && this.player.x < this.ui.canvas.width) { this.player.x += this.player.speed; this.isMoving = true; }
+
+            // Joystick movement
+            if (this.joystickActive) {
+              const moveX = this.joystickX * this.player.speed;
+              const moveY = this.joystickY * this.player.speed;
+              this.player.x = Math.max(0, Math.min(this.ui.canvas.width, this.player.x + moveX));
+              this.player.y = Math.max(0, Math.min(this.ui.canvas.height, this.player.y + moveY));
+              if (moveX !== 0 || moveY !== 0) this.isMoving = true;
+            }
+
+            // Sound handling
             if (this.isMoving && !this.moveSoundPlaying) {
               this.ui.sounds.shipMove.play().catch((error) => console.error("Error playing ship move sound:", error));
               this.moveSoundPlaying = true;
@@ -683,6 +869,34 @@
               }
             });
 
+            //Tower shooting
+            this.towers.forEach((tower, towerIndex) => {
+              let nearestEnemy = null;
+              let nearestDistance = this.towerRange; // Default tower range (e.g., 100 pixels)
+              this.enemies.forEach((enemy) => {
+                  const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
+                  if (dist < nearestDistance) {
+                      nearestEnemy = enemy;
+                      nearestDistance = dist;
+                  }
+              });
+
+              // If an enemy is within range, update timer and fire if ready.
+              if (nearestEnemy) {
+                  tower.timeSinceLastShot += this.frameInterval / 1000;
+                  const towerFireRate = this.solarFlare.active ? this.towerFireRate / 2 : this.towerFireRate;
+                  if (tower.timeSinceLastShot >= 1 / towerFireRate) {
+                      const angle = Math.atan2(nearestEnemy.y - tower.y, nearestEnemy.x - tower.x);
+                      const vx = Math.cos(angle) * this.projectileSpeed;
+                      const vy = Math.sin(angle) * this.projectileSpeed;
+                      this.projectiles.push({ x: tower.x, y: tower.y, size: 5, vx, vy, source: 'turret' });
+                      this.ui.sounds.turretShoot.play().catch((error) => console.error("Error playing turret shoot sound:", error));
+                      console.log('Tower ${towerIndex} fired at enemy at (${nearestEnemy.x.toFixed(1)}, ${nearestEnemy.y.toFixed(1)})');
+                      tower.timeSinceLastShot = 0;
+                  }
+              }
+            });
+
             this.ui.updateHUD(this.elapsedTime, this.coinCount, currentFireRate, this.playerHealth, hazardWarning);
         }
 
@@ -831,34 +1045,13 @@
             // Draw towers
             const towersToRemoveFinal = []; // Collect any additional tower removals from other hazards
             this.towers.forEach((tower) => {
-                ctx.drawImage(this.images.tower, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
-                ctx.fillStyle = "red";
-                ctx.fillRect(tower.x - 25, tower.y - 35, 50 * (tower.health / 5), 5);
-                ctx.fillStyle = "white";
-                ctx.font = "14px Arial";
-                ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
-
-                let nearestEnemy = null;
-                let nearestDistance = this.towerRange;
-                this.enemies.forEach((enemy) => {
-                    const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
-                    if (dist < nearestDistance) { nearestEnemy = enemy; nearestDistance = dist; }
-                });
-
-                if (nearestEnemy) {
-                    tower.timeSinceLastShot += this.frameInterval / 1000;
-                    const towerFireRate = this.solarFlare.active ? this.towerFireRate / 2 : this.towerFireRate;
-                    if (tower.timeSinceLastShot >= 1 / towerFireRate) {
-                        const angle = Math.atan2(nearestEnemy.y - tower.y, nearestEnemy.x - tower.x);
-                        const vx = Math.cos(angle) * this.projectileSpeed;
-                        const vy = Math.sin(angle) * this.projectileSpeed;
-                        this.projectiles.push({ x: tower.x, y: tower.y, size: 5, vx, vy });
-                        this.ui.sounds.turretShoot.play().catch((error) => console.error("Error playing turret shoot sound:", error));
-                        tower.timeSinceLastShot = 0;
-                    }
-                }
+              ctx.drawImage(this.images.tower, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
+              ctx.fillStyle = "red";
+              ctx.fillRect(tower.x - 25, tower.y - 35, 50 * (tower.health / 5), 5);
+              ctx.fillStyle = "white";
+              ctx.font = "14px Arial";
+              ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
             });
-
             // Draw asteroids
             const asteroidsToRemove = [];
             this.asteroids.forEach((asteroid, index) => {
