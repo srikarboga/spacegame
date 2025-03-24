@@ -361,7 +361,7 @@
             this.asteroids = [];
             this.debris = [];
             this.solarFlare = { active: false, warningTime: 0, duration: 0 };
-            
+            this.mines = [];
 
             this.projectileSpeed = 10;
             this.projectileDamage = 1;
@@ -403,7 +403,7 @@
               nebulaStalker: new Image(), // Nebula Stalker image
               solarCharger: new Image(), // Solar Charger image (for future use)
               fractalShard: new Image(), // Fractal Shard image (for future use)
-              voidMineLayer: new Image(), // Void Mine Layer image (for future use)
+              voidMineLayer: new Image(), // Void Mine Layer image
               coin: new Image(),
               background: new Image(), 
               tower: new Image(), 
@@ -414,7 +414,7 @@
             this.images.nebulaStalker.src = "nebula_stalker.png"; // Placeholder; replace with actual image
             this.images.solarCharger.src = "solarCharger.png"; // Placeholder; replace with actual image
             this.images.fractalShard.src = "fractalShard.png"; // Placeholder; replace with actual image
-            this.images.voidMineLayer.src = "voidMineLayer.png"; // Placeholder; replace with actual image
+            this.images.voidMineLayer.src = "voidMineLayer.png"; // Assuming this exists
             this.images.coin.src = "coin.png";
             this.images.background.src = "background.png";
             this.images.tower.src = "tower.png";
@@ -533,6 +533,7 @@
             this.towers.length = 0;
             this.asteroids.length = 0;
             this.debris.length = 0;
+            this.mines.length = 0;
             this.solarFlare = { active: false, warningTime: 0, duration: 0 };
             this.coinCount = 0;
             this.fireRate = 6;
@@ -597,7 +598,11 @@
                 case 2: x = Math.random() * canvasWidth; y = canvasHeight + this.enemySize; break;
                 case 3: x = -this.enemySize; y = Math.random() * canvasHeight; break;
             }
-            const type = Math.random() < 0.1 ? 'nebulaStalker' : 'zephyrScout'; //
+            let type;
+            const rand = Math.random();
+            if (rand < 0.05) type = 'voidMineLayer'; // 5% chance
+            else if (rand < 0.15) type = 'nebulaStalker'; // 10% chance
+            else type = 'zephyrScout'; // 85% chance
             this.enemies.push({ 
               x, y, 
               health: this.enemyTypes[type].health, 
@@ -606,11 +611,11 @@
               zigzagDirection: type === 'zephyrScout' ? 1 : undefined, // Zephyr-specific
               circleRadius: type === 'nebulaStalker' ? this.enemyTypes.nebulaStalker.circleRadius : undefined, 
               circleAngle: type === 'nebulaStalker' ? Math.random() * 2 * Math.PI : undefined, // Random starting angle
-              shotTimer: type === 'nebulaStalker' ? 0 : undefined 
+              shotTimer: type === 'nebulaStalker' ? 0 : undefined,
+              mineTimer: type === 'voidMineLayer' ? 0 : undefined // Void Mine Layer-specific
             });
           }
 
-          // MARK: New Method - Spawn Nebula Stalker Separately (Optional, for more control)
           spawnNebulaStalker() {
             const canvasWidth = this.ui.canvas.width || 800;
             const canvasHeight = this.ui.canvas.height || 600;
@@ -632,7 +637,6 @@
             });
           }
 
-          // MARK: New Method - Spawn Zephyr Scout Separately (Optional, for more control)
           spawnZephyrScout() {
             const canvasWidth = this.ui.canvas.width || 800;
             const canvasHeight = this.ui.canvas.height || 600;
@@ -704,9 +708,7 @@
             }
           }
 
-          // MARK: Nebula Stalker Behavior Update
           updateNebulaStalker(enemy) {
-            //closest enemy logic
             let target = this.player;
             let closestDist = Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y);
             if (this.towers.length > 0) {
@@ -716,7 +718,6 @@
               });
             }
             const currentEnemySpeed = this.solarFlare.active ? this.enemySpeed * 2 : this.enemySpeed;
-            //shooting logic
             enemy.shotTimer += this.frameInterval / 1000;
             if (enemy.shotTimer >= 5) { // Shoot every 5 seconds
               const angleToTarget = Math.atan2(target.y - enemy.y, target.x - enemy.x);
@@ -728,39 +729,24 @@
               });
               enemy.shotTimer = 0;
             }
-            // Calculate current distance to target
-              const currentDistance = Math.hypot(target.x - enemy.x, target.y - enemy.y);
-
-            // Initialize previousDistance if not set
+            const currentDistance = Math.hypot(target.x - enemy.x, target.y - enemy.y);
             if (!enemy.previousDistance) {
               enemy.previousDistance = currentDistance;
             }
-
-            // Check if the nebulaStalker is moving away
             const isMovingAway = currentDistance > enemy.previousDistance;
-
-            // Update previousDistance for the next frame
             enemy.previousDistance = currentDistance;
-
-            // Update circling parameters
             const angularSpeed = (0.01 * currentEnemySpeed) / (enemy.circleRadius / 100);
             enemy.circleAngle += angularSpeed;
-
-            // Adjust radius decrease rate for spiraling
-            const baseDecrement = 0.75 * currentEnemySpeed; // Normal rate of radius decrease
-            const spiralMultiplier = isMovingAway ? 2 : 1;   // Faster decrease when moving away
+            const baseDecrement = 0.75 * currentEnemySpeed;
+            const spiralMultiplier = isMovingAway ? 2 : 1;
             enemy.circleRadius = Math.max(50, enemy.circleRadius - baseDecrement * spiralMultiplier);
-
-            // Calculate desired position on the circling path
             const desiredX = target.x + Math.cos(enemy.circleAngle) * enemy.circleRadius;
             const desiredY = target.y + Math.sin(enemy.circleAngle) * enemy.circleRadius;
-
-            // Move toward the desired position
             const dx = desiredX - enemy.x;
             const dy = desiredY - enemy.y;
             const distanceToDesired = Math.hypot(dx, dy);
             if (distanceToDesired > 0) {
-              const moveSpeed = currentEnemySpeed * 2; // Adjustable movement speed
+              const moveSpeed = currentEnemySpeed * 2;
               const moveX = (dx / distanceToDesired) * moveSpeed;
               const moveY = (dy / distanceToDesired) * moveSpeed;
               enemy.x += moveX;
@@ -768,7 +754,6 @@
             }
           }
 
-          // MARK: Zephyr Scout Behavior Update
           updateZephyrScout(enemy) {
             let target = this.player;
             let closestDist = Math.hypot(enemy.x - target.x, enemy.y - target.y);
@@ -784,10 +769,31 @@
               enemy.zigzagDirection *= -1;
               enemy.zigzagTimer = 0;
             }
-            // Add horizontal zigzag (10 pixels side to side)
             const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
             enemy.x += Math.cos(angle) * currentEnemySpeed + (enemy.zigzagDirection * 10 * (this.frameInterval / 1000) * this.enemyTypes.zephyrScout.speed);
             enemy.y += Math.sin(angle) * currentEnemySpeed;
+          }
+
+          updateVoidMineLayer(enemy) {
+            let target = this.player;
+            let closestDist = Math.hypot(enemy.x - target.x, enemy.y - target.y);
+            if (this.towers.length > 0) {
+              this.towers.forEach(tower => {
+                let towerDist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
+                if (towerDist < closestDist) { target = tower; closestDist = towerDist; }
+              });
+            }
+            const currentEnemySpeed = this.solarFlare.active ? this.enemySpeed * 2 : this.enemySpeed;
+            const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+            enemy.x += Math.cos(angle) * currentEnemySpeed;
+            enemy.y += Math.sin(angle) * currentEnemySpeed;
+
+            // Mine dropping logic
+            enemy.mineTimer += this.frameInterval / 1000;
+            if (enemy.mineTimer >= 5 && this.mines.length < this.enemyTypes.voidMineLayer.maxMines) { // Drop mine every 5 seconds, max 3 mines
+              this.mines.push({ x: enemy.x, y: enemy.y, lifespan: this.enemyTypes.voidMineLayer.mineLifespan });
+              enemy.mineTimer = 0;
+            }
           }
 
           update(timestamp) {
@@ -798,29 +804,24 @@
 
             this.movePlayer();
 
-            // Spawn enemies (including Nebula Stalker and Zephyr Scout)
             this.timeSinceLastSpawn += this.frameInterval / 1000;
             if (this.timeSinceLastSpawn >= 1 / this.spawnRate) {
-                this.spawnEnemy(); // Updated elsewhere to include new types
-                //console.log("Spawned enemy at:", this.enemies[this.enemies.length - 1]);
+                this.spawnEnemy();
                 this.timeSinceLastSpawn = 0;
             }
 
-            // MARK: Spawn Nebula Stalker
             this.timeSinceLastNebulaStalker += this.frameInterval / 1000;
-            if (this.timeSinceLastNebulaStalker >= Math.random() * 10 + 15) { // Rarer spawn (15-25 seconds)
+            if (this.timeSinceLastNebulaStalker >= Math.random() * 10 + 15) {
               this.spawnNebulaStalker();
               this.timeSinceLastNebulaStalker = 0;
             }
 
-            // MARK: Spawn Zephyr Scout
             this.timeSinceLastZephyrScout += this.frameInterval / 1000;
-            if (this.timeSinceLastZephyrScout >= Math.random() * 5 + 10) { // More frequent spawn (10-15 seconds)
+            if (this.timeSinceLastZephyrScout >= Math.random() * 5 + 10) {
               this.spawnZephyrScout();
               this.timeSinceLastZephyrScout = 0;
             }
 
-            // Shooting logic
             const currentFireRate = this.solarFlare.active ? this.fireRate / 2 : this.fireRate;
             this.timeSinceLastShot += this.frameInterval / 1000;
             if (this.timeSinceLastShot >= 1 / currentFireRate && this.isShooting) {
@@ -828,7 +829,6 @@
                 this.timeSinceLastShot = 0;
             }
 
-            // Hazard spawning
             this.timeSinceLastHazard += this.frameInterval / 1000;
             if (this.timeSinceLastHazard >= Math.random() * 5 + 15) {
                 const hazard = Math.floor(Math.random() * 3);
@@ -845,7 +845,6 @@
                 this.timeSinceLastHazard = 0;
             }
 
-            // Solar flare logic
             let hazardWarning = "";
             if (this.solarFlare.warningTime > 0) {
                 this.solarFlare.warningTime -= this.frameInterval / 1000;
@@ -860,19 +859,19 @@
                 if (this.solarFlare.duration <= 0) this.solarFlare.active = false;
             }
 
-            // MARK: Update Nebula Stalker and Zephyr Scout Behaviors
             this.enemies.forEach(enemy => {
               if (enemy.type === 'nebulaStalker') {
                 this.updateNebulaStalker(enemy);
               } else if (enemy.type === 'zephyrScout') {
                 this.updateZephyrScout(enemy);
+              } else if (enemy.type === 'voidMineLayer') {
+                this.updateVoidMineLayer(enemy);
               }
             });
 
-            //Tower shooting
             this.towers.forEach((tower, towerIndex) => {
               let nearestEnemy = null;
-              let nearestDistance = this.towerRange; // Default tower range (e.g., 100 pixels)
+              let nearestDistance = this.towerRange;
               this.enemies.forEach((enemy) => {
                   const dist = Math.hypot(tower.x - enemy.x, tower.y - enemy.y);
                   if (dist < nearestDistance) {
@@ -881,7 +880,6 @@
                   }
               });
 
-              // If an enemy is within range, update timer and fire if ready.
               if (nearestEnemy) {
                   tower.timeSinceLastShot += this.frameInterval / 1000;
                   const towerFireRate = this.solarFlare.active ? this.towerFireRate / 2 : this.towerFireRate;
@@ -897,7 +895,7 @@
             });
 
             this.ui.updateHUD(this.elapsedTime, this.coinCount, currentFireRate, this.playerHealth, hazardWarning);
-        }
+          }
 
           draw() {
             const backgroundMusic = document.getElementById("background-music");
@@ -906,7 +904,6 @@
 
             ctx.drawImage(this.images.background, 0, 0, this.ui.canvas.width, this.ui.canvas.height);
 
-            // Draw player
             const angle = Math.atan2(this.mouseY - this.player.y, this.mouseX - this.player.x);
             ctx.save();
             ctx.translate(this.player.x, this.player.y);
@@ -914,42 +911,36 @@
             ctx.drawImage(this.images.player, -this.player.size / 2, -this.player.size / 2, this.player.size, this.player.size);
             ctx.restore();
 
-            // Draw projectiles
-            
             const projectilesToRemove = [];
             this.projectiles.forEach((proj, index) => {
               if (proj.type === 'nebulaShot' && proj.source === 'enemy') {
-                // Homing behavior
                 const angleToTarget = Math.atan2(proj.targetY - proj.y, proj.targetX - proj.x);
-                proj.vx += Math.cos(angleToTarget) * 0.1; // Gradual direction adjustment
+                proj.vx += Math.cos(angleToTarget) * 0.1;
                 proj.vy += Math.sin(angleToTarget) * 0.1;
                 proj.x += proj.vx;
                 proj.y += proj.vy;
-                ctx.fillStyle = "purple"; // Distinct color for Nebula shots
+                ctx.fillStyle = "purple";
                 ctx.fillRect(proj.x - proj.size / 2, proj.y - proj.size / 2, proj.size, proj.size);
-                //Nebula collision player
                 const playerDist = Math.hypot(proj.x - this.player.x, proj.y - this.player.y);
                 if (playerDist < this.player.size / 2 + proj.size / 2) {
-                  this.playerHealth -= 1; // Adjust damage amount as needed (currently 1 HP)
-                  this.projectiles.splice(index, 1); // Remove projectile on hit
+                  this.playerHealth -= 1;
+                  this.projectiles.splice(index, 1);
                   if (this.playerHealth <= 0) {
                     this.gameOver = true;
                     this.ui.endGame(backgroundMusic);
                     this.ui.sounds.shipDestroy.play().catch((error) => console.error("Error playing sound:", error));
                   }
-                  return; // Exit loop for this projectile since it’s removed
+                  return;
                 }
-
-                // Nebula Collision with turrets
                 this.towers.forEach((tower, tIndex) => {
                   const towerDist = Math.hypot(proj.x - tower.x, proj.y - tower.y);
                   if (towerDist < this.towerSize / 2 + proj.size / 2) {
-                    tower.health -= 1; // Adjust damage amount as needed (currently 1 HP)
-                    this.projectiles.splice(index, 1); // Remove projectile on hit
+                    tower.health -= 1;
+                    this.projectiles.splice(index, 1);
                     if (tower.health <= 0) {
-                      this.towers.splice(tIndex, 1); // Remove destroyed turret
+                      this.towers.splice(tIndex, 1);
                     }
-                    return; // Exit tower loop for this projectile
+                    return;
                   }
                 });
               } else if (proj.source === 'player' || proj.source === 'turret') {
@@ -963,11 +954,9 @@
               }
             });
 
-            // Draw enemies
             const currentEnemySpeed = this.solarFlare.active ? this.enemySpeed * 2 : this.enemySpeed;
             const enemiesToRemove = [];
             this.enemies.forEach((enemy, index) => {
-                //Draw enemy
                 if (enemy.type === 'nebulaStalker') {
                   ctx.drawImage(this.images.nebulaStalker, enemy.x - this.enemySize / 2, enemy.y - this.enemySize / 2, this.enemySize, this.enemySize);
                 } else if (enemy.type === 'solarCharger') {
@@ -977,9 +966,8 @@
                 } else if (enemy.type === 'voidMineLayer') {
                   ctx.drawImage(this.images.voidMineLayer, enemy.x - this.enemySize / 2, enemy.y - this.enemySize / 2, this.enemySize, this.enemySize);
                 } else {
-                  ctx.drawImage(this.images.zephyrScout, enemy.x - this.enemySize / 2, enemy.y - this.enemySize / 2, this.enemySize, this.enemySize); // Fallback to Zephyr Scout for undefined types
+                  ctx.drawImage(this.images.zephyrScout, enemy.x - this.enemySize / 2, enemy.y - this.enemySize / 2, this.enemySize, this.enemySize);
                 }
-                //collision player
                 const dist = Math.hypot(this.player.x - enemy.x, this.player.y - enemy.y);
                 if (dist < this.player.size / 2 + this.enemySize / 2) {
                   const damage = this.enemyTypes[enemy.type].damageToPlayer;
@@ -991,34 +979,29 @@
                     this.ui.sounds.shipDestroy.play().catch((error) => console.error("Error playing ship destroy sound:", error));
                   }
                 }
-                //collision towers
                 if (this.towers.length > 0) {
-                    const towersToRemove = []; // New array for tower removals
+                    const towersToRemove = [];
                     this.towers.forEach((tower, tIndex) => {
                         const towerDist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
                         if (towerDist < this.towerSize / 2 + this.enemySize / 2) {
                           const damage = this.enemyTypes[enemy.type].damageToTower;
-                          // Ensure tower.health doesn't become NaN (fix for issue 2 below)
-                          if (isNaN(tower.health)) tower.health = 0; // Reset to default health if NaN
-                          tower.health = Math.max(0, tower.health - damage); // Prevent negative health
+                          if (isNaN(tower.health)) tower.health = 0;
+                          tower.health = Math.max(0, tower.health - damage);
                             if (tower.health <= 0) {
-                                towersToRemove.push(tIndex); // Collect tower index for removal
+                                towersToRemove.push(tIndex);
                             }
                             enemiesToRemove.push(index);
                         }
                     });
-                    // Apply tower removals immediately to avoid nested loop issues
                     towersToRemove.sort((a, b) => b - a).forEach(tIndex => this.towers.splice(tIndex, 1));
                 }
 
-                // Check collisions with projectiles (apply damage and track health)
                 this.projectiles.forEach((proj, projIndex) => {
                   const projDist = Math.hypot(proj.x - enemy.x, proj.y - enemy.y);
                   if (projDist < proj.size / 2 + this.enemySize / 2 && (proj.source === 'player' || proj.source === 'turret')) {
-                    // Reduce enemy health by projectile damage (only for player/turret shots)
-                    enemy.health -= this.projectileDamage; // Default projectile damage is 1 HP
+                    enemy.health -= this.projectileDamage;
                     projectilesToRemove.push(projIndex);
-                    if (enemy.health <= 0) { // Only remove if health is depleted
+                    if (enemy.health <= 0) {
                       enemiesToRemove.push(index);
                       this.ui.sounds.enemyDeath.play().catch((error) => console.error("Error playing enemy death sound:", error));
                       this.dropCoin(enemy.x, enemy.y);
@@ -1027,13 +1010,11 @@
                 });
               });
 
-            // Draw coins (Updated for safety)
             const coinsToRemove = [];
             this.coins.forEach((coin, index) => {
                 ctx.drawImage(this.images.coin, coin.x - this.coinSize / 2, coin.y - this.coinSize / 2, this.coinSize, this.coinSize);
                 const dist = Math.hypot(this.player.x - coin.x, this.player.y - coin.y);
                 if (dist < this.player.size / 2 + this.coinSize / 2) {
-                    // Ensure index is valid before pushing
                     if (index >= 0 && index < this.coins.length) {
                         coinsToRemove.push(index);
                         this.coinCount++;
@@ -1041,8 +1022,7 @@
                 }
             });
 
-            // Draw towers
-            const towersToRemoveFinal = []; // Collect any additional tower removals from other hazards
+            const towersToRemoveFinal = [];
             this.towers.forEach((tower) => {
               ctx.drawImage(this.images.tower, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
               ctx.fillStyle = "red";
@@ -1051,7 +1031,7 @@
               ctx.font = "14px Arial";
               ctx.fillText(`HP: ${tower.health}`, tower.x - 15, tower.y - 40);
             });
-            // Draw asteroids
+
             const asteroidsToRemove = [];
             this.asteroids.forEach((asteroid, index) => {
                 asteroid.x += asteroid.vx;
@@ -1092,7 +1072,6 @@
                         projectilesToRemove.push(pIndex);
                         if (asteroid.health <= 0) {
                             asteroidsToRemove.push(index);
-                            //old feature this.dropCoin(asteroid.x, asteroid.y);
                             this.playerHealth+=1
                             this.ui.sounds.asteroidHit.play().catch((error) => console.error("Error playing asteroid hit sound:", error));
                         }
@@ -1105,7 +1084,6 @@
                 }
             });
 
-            // Draw debris
             const debrisToRemove = [];
             this.debris.forEach((particle, index) => {
                 particle.x += particle.vx;
@@ -1149,14 +1127,62 @@
                 }
             });
 
-            // Draw solar flare effect
+            const minesToRemove = [];
+            this.mines.forEach((mine, index) => {
+              mine.lifespan -= this.frameInterval / 1000;
+              ctx.fillStyle = mine.lifespan <= 1 ? "orange" : "red"; // Orange in last second
+              ctx.beginPath();
+              ctx.arc(mine.x, mine.y, 10, 0, Math.PI * 2);
+              ctx.fill();
+
+              this.projectiles.forEach((proj, pIndex) => {
+                const projDist = Math.hypot(proj.x - mine.x, proj.y - mine.y);
+                if (projDist < proj.size / 2 + 10 && (proj.source === 'player' || proj.source === 'turret')) {
+                  minesToRemove.push(index);
+                  projectilesToRemove.push(pIndex);
+                }
+              });
+
+              if (mine.lifespan <= 0) {
+                minesToRemove.push(index);
+                const explosionRadius = 50;
+                const playerDist = Math.hypot(mine.x - this.player.x, mine.y - this.player.y);
+                if (playerDist < explosionRadius && this.playerHealth > 0) {
+                  this.playerHealth -= this.enemyTypes.voidMineLayer.damageToPlayer;
+                  if (this.playerHealth <= 0) {
+                    this.gameOver = true;
+                    this.ui.endGame(backgroundMusic);
+                    this.ui.sounds.shipDestroy.play().catch((error) => console.error("Error playing ship destroy sound:", error));
+                  }
+                }
+                this.towers.forEach((tower, tIndex) => {
+                  const towerDist = Math.hypot(mine.x - tower.x, mine.y - tower.y);
+                  if (towerDist < explosionRadius) {
+                    tower.health -= this.enemyTypes.voidMineLayer.damageToTower;
+                    if (tower.health <= 0) {
+                      towersToRemoveFinal.push(tIndex);
+                    }
+                  }
+                });
+                this.enemies.forEach((enemy, eIndex) => {
+                  const enemyDist = Math.hypot(mine.x - enemy.x, mine.y - enemy.y);
+                  if (enemyDist < explosionRadius) {
+                    enemy.health -= this.enemyTypes.voidMineLayer.damageToEnemies;
+                    if (enemy.health <= 0) {
+                      enemiesToRemove.push(eIndex);
+                      this.dropCoin(enemy.x, enemy.y);
+                      this.ui.sounds.enemyDeath.play().catch((error) => console.error("Error playing enemy death sound:", error));
+                    }
+                  }
+                });
+              }
+            });
+
             if (this.solarFlare.active) {
                 ctx.fillStyle = "rgba(255, 100, 0, 0.3)";
                 ctx.fillRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
             }
 
-            // Remove elements after iteration (updated for safety)
-            // Sort and remove in reverse order to prevent index shifting
             enemiesToRemove.sort((a, b) => b - a).forEach(index => {
                 if (index >= 0 && index < this.enemies.length) this.enemies.splice(index, 1);
             });
@@ -1172,17 +1198,19 @@
             debrisToRemove.sort((a, b) => b - a).forEach(index => {
                 if (index >= 0 && index < this.debris.length) this.debris.splice(index, 1);
             });
+            minesToRemove.sort((a, b) => b - a).forEach(index => {
+                if (index >= 0 && index < this.mines.length) this.mines.splice(index, 1);
+            });
             towersToRemoveFinal.sort((a, b) => b - a).forEach(index => {
                 if (index >= 0 && index < this.towers.length) this.towers.splice(index, 1);
             });
 
-            // Check game over condition (redundant check)
             if (this.playerHealth <= 0) {
                 this.gameOver = true;
                 this.ui.endGame(backgroundMusic);
                 this.ui.sounds.shipDestroy.play().catch((error) => console.error("Error playing ship destroy sound:", error));
             }
-        }
+          }
         }
 
         class Game {
