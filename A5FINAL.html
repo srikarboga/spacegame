@@ -1,0 +1,2442 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" name="viewport" />
+    <title>Spacescape</title>
+    <style>
+    /* Base Styles */
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #0a0a1f; /* Darker space blue */
+        color: #e0e0e0; /* Lighter grey for text */
+        font-family: 'Orbitron', sans-serif; /* Keep Orbitron */
+        overflow: hidden;
+        height: 100vh; /* Ensure full viewport height */
+    }
+
+    html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Orbitron", sans-serif; /* Ensure font is loaded */
+    }
+
+    /* Responsive Image */
+    img.responsive {
+        max-width: 100%;
+        max-height: 250px; /* Slightly smaller */
+        display: block;
+        margin: 20px auto; /* Add some top margin */
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 255, 255, 0.1); /* Subtle cyan glow */
+    }
+
+    /* Screen Styling */
+    .screen {
+        display: none;
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        /* Animated Gradient Background */
+        background: linear-gradient(225deg, #0a0a1f, #1a1a3a, #2a2a5a, #1a1a3a);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        box-sizing: border-box; /* Include padding/border in element's total width/height */
+        padding: 20px;
+    }
+
+    .screen.active {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 1;
+        z-index: 10; /* Base z-index for screens */
+    }
+
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Container for Centered Content */
+    .container {
+        text-align: center;
+        max-width: 650px;
+        width: 90%;
+        background: rgba(15, 15, 40, 0.8); /* More opaque background */
+        padding: 30px 40px;
+        border-radius: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.4); /* Brighter Cyan border */
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.25), inset 0 0 15px rgba(0, 0, 0, 0.4); /* Enhanced shadow */
+        z-index: 11; /* Ensure container is above screen background */
+        position: relative; /* Needed for z-index */
+    }
+
+    /* Button Styling */
+    button {
+        background: linear-gradient(145deg, #00ffff, #0077ff); /* Cyan to Blue gradient */
+        border: none; /* Remove default border */
+        border-radius: 50px; /* Pill shape */
+        color: #0a0a1f; /* Dark text for contrast */
+        font-family: 'Orbitron', sans-serif;
+        font-size: 18px; /* Slightly smaller default */
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(0, 200, 255, 0.3), inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        padding: 15px 35px;
+        margin: 15px auto 0;
+        display: block;
+        min-width: 220px; /* Ensure minimum width */
+        cursor: pointer;
+        transition: all 0.3s ease;
+        outline: none; /* Remove focus outline */
+        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    }
+
+    button:hover {
+        background: linear-gradient(145deg, #00e0e0, #0055dd); /* Slightly darker gradient on hover */
+        transform: translateY(-3px) scale(1.03); /* Lift and slightly enlarge */
+        box-shadow: 0 7px 15px rgba(0, 220, 255, 0.4), inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+        color: #ffffff; /* Text white on hover */
+    }
+
+    button:active {
+        transform: translateY(0px) scale(1); /* Push down on click */
+        box-shadow: 0 2px 5px rgba(0, 200, 255, 0.2), inset 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Game Title */
+    #game-title {
+        font-size: 3.5em; /* Larger title */
+        margin-bottom: 40px;
+        text-transform: uppercase;
+        font-weight: 900;
+        color: #ffffff; /* White base */
+        text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #0077ff, 0 0 5px #000; /* Strong cyan/blue glow */
+        letter-spacing: 2px;
+    }
+
+    /* Headings inside containers */
+    .container h2 {
+        color: #00ffff; /* Cyan heading */
+        margin-bottom: 25px;
+        font-size: 2em;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    }
+
+    .container h3 {
+        color: #e0e0e0;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        text-align: left;
+    }
+
+    .container ul {
+        list-style: none; /* Remove default bullets */
+        padding: 0;
+        margin: 0 auto 20px auto;
+        text-align: left;
+        max-width: 85%; /* Slightly wider */
+    }
+
+    .container ul li {
+        margin-bottom: 10px;
+        padding-left: 25px;
+        position: relative;
+        color: #c0c0c0; /* Lighter grey list items */
+        line-height: 1.4; /* Improve readability */
+    }
+
+    .container ul li::before {
+        content: '»'; /* Use double arrow as bullet */
+        position: absolute;
+        left: 0;
+        top: 1px; /* Adjust vertical alignment */
+        color: #00ffff; /* Cyan bullet */
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    /* Game Controls Bar */
+    #game-controls {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: rgba(5, 5, 20, 0.9); /* Slightly more opaque */
+        padding: 8px 0;
+        z-index: 101; /* Above screens, below active modals maybe */
+        display: none; /* Hidden by default */
+        text-align: center;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.3); /* Subtle bottom border */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        height: auto; /* Allow height to adjust */
+        box-sizing: border-box;
+    }
+
+    #game-controls button {
+        display: inline-block;
+        width: auto;
+        padding: 8px 20px;
+        margin: 5px 10px; /* Add vertical margin for wrapping */
+        font-size: 14px;
+        min-width: 100px; /* Minimum width for control buttons */
+        background: linear-gradient(145deg, #444, #222); /* Grey gradient */
+        color: #e0e0e0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 -1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    #game-controls button:hover {
+        background: linear-gradient(145deg, #555, #333);
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    #game-controls button:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* HUD (Heads Up Display) */
+    #hud {
+        position: fixed;
+        top: 0; /* Placeholder, JS will calculate based on game-controls height */
+        left: 0;
+        width: 100%;
+        color: #e0e0e0;
+        padding: 5px 15px;
+        z-index: 100; /* Below game controls */
+        font-family: 'Orbitron', sans-serif;
+        background: rgba(10, 10, 30, 0.85); /* Semi-transparent background for HUD bar */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        display: none; /* Initially hidden, JS changes to flex */
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: space-around; /* Distribute items evenly */
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        box-sizing: border-box;
+        min-height: 40px; /* Ensure minimum height */
+    }
+
+    /* Selector to show HUD when game screen is active */
+     #game-screen.active ~ #hud { /* Using general sibling combinator */
+        display: flex; /* Use flex when active */
+     }
+
+
+    #timer, #coinCounter, #fireRateDisplay, #healthDisplay, #hazardWarning {
+        font-size: 16px; /* Adjusted HUD text size */
+        margin: 5px 10px; /* Consistent margin */
+        text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.3); /* Slight background per item */
+        padding: 5px 10px;
+        border-radius: 5px;
+        flex-shrink: 0; /* Prevent items from shrinking too much */
+        white-space: nowrap; /* Prevent text wrapping within item */
+    }
+
+    #healthDisplay { color: #00ff88; } /* Green for health */
+    #coinCounter { color: #ffff00; } /* Yellow for coins */
+    #fireRateDisplay { color: #ff8800; } /* Orange for fire rate */
+    #timer { color: #aaaaff; } /* Light blue for timer */
+    #hazardWarning {
+        color: #ff4444; /* Red for warnings */
+        font-weight: bold;
+        flex-basis: 100%; /* Take full width if needed */
+        text-align: center;
+        margin-top: 5px;
+        background: rgba(255, 0, 0, 0.2);
+        order: 5; /* Ensure warning appears last if wrapped */
+        display: none; /* Hide by default, shown by JS */
+    }
+
+    /* Game Container & Canvas */
+    #game-container {
+        position: absolute; /* Positioned absolutely within game-screen */
+        top: 0; /* JS calculates */
+        left: 0;
+        width: 100%;
+        height: 100%; /* JS calculates */
+        overflow: hidden;
+        background-color: transparent; /* Let screen background show through */
+        border: none; /* Remove previous border */
+        box-shadow: none; /* Remove previous shadow */
+        display: flex; /* Ensure canvas fills container */
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        z-index: 20; /* Ensure game canvas is above screen background */
+    }
+
+    canvas#gameCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background-color: #000; /* Black background for canvas itself */
+        /* Optional: Add a subtle inner glow or border effect */
+        /* box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.2); */
+    }
+
+    /* Specific Screen Styles */
+    #settings-screen .container,
+    #instructions-screen .container,
+    #game-over-screen .container {
+        background: rgba(20, 20, 50, 0.85); /* Slightly more opaque */
+        border: 1px solid rgba(100, 100, 255, 0.5); /* Brighter Purple-ish border */
+        box-shadow: 0 0 30px rgba(100, 100, 255, 0.25), inset 0 0 15px rgba(0, 0, 0, 0.5); /* Enhanced shadow */
+    }
+
+    #game-over-screen #game-over-message {
+        font-size: 1.3em; /* Slightly larger message */
+        margin: 25px 0;
+        color: #ffdddd; /* Light red for game over message */
+        font-weight: bold;
+    }
+
+    /* Joystick Styles */
+    #joystick-container {
+        position: absolute;
+        bottom: 30px; /* Increased spacing */
+        left: 30px;
+        width: 120px; /* Larger base */
+        height: 120px;
+        z-index: 110; /* Ensure above canvas */
+        display: none; /* Hidden by default, shown when game screen active */
+        user-select: none; /* Prevent text selection */
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE/Edge */
+    }
+
+    #joystick-base {
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 255, 255, 0.15); /* Transparent cyan */
+        border: 2px solid rgba(0, 255, 255, 0.4); /* Cyan border */
+        border-radius: 50%;
+        position: absolute;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    }
+
+    #joystick-handle {
+        width: 50px; /* Larger handle */
+        height: 50px;
+        background: radial-gradient(circle, #00ffff 40%, #00aaff 100%); /* Cyan/blue gradient */
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Center initially */
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        transition: none; /* IMPORTANT: Disable transition for smooth movement */
+    }
+
+    /* Action Buttons Styles */
+    #action-buttons {
+        position: absolute;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px; /* Increased gap */
+        z-index: 110; /* Ensure above canvas */
+        display: none; /* Hidden by default, shown when game screen active */
+    }
+
+    .action-btn {
+        background: linear-gradient(145deg, #00ffff, #0077ff); /* Match main buttons */
+        border: none;
+        border-radius: 10px; /* Rounded rectangle */
+        color: #0a0a1f;
+        font-family: "Orbitron", sans-serif;
+        font-size: 14px; /* Keep size appropriate */
+        font-weight: 600;
+        padding: 12px 20px; /* Adjusted padding */
+        text-transform: uppercase;
+        box-shadow: 0 3px 8px rgba(0, 200, 255, 0.25), inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        touch-action: none; /* Prevent default touch behavior like scrolling */
+        text-align: center;
+        min-width: 160px; /* Min width for action buttons */
+        margin: 0; /* Override default button margin */
+        user-select: none; /* Prevent text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .action-btn:hover {
+        background: linear-gradient(145deg, #00e0e0, #0055dd);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0, 220, 255, 0.35), inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+        color: #ffffff;
+    }
+
+    .action-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 4px rgba(0, 200, 255, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Show controls when game-screen is active */
+    /* These are handled by JS display style changes, but CSS rules are good fallback/clarity */
+    #game-screen.active #joystick-container {
+        display: block;
+    }
+    #game-screen.active #action-buttons {
+        display: flex;
+    }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #game-title { font-size: 2.8em; margin-bottom: 30px; }
+        button { padding: 12px 30px; font-size: 16px; min-width: 180px; }
+        .container { padding: 20px; }
+        .container h2 { font-size: 1.8em; }
+        /* HUD adjustments for stacking */
+         #game-screen.active ~ #hud {
+            /* HUD already uses flex-wrap, so items will stack */
+             justify-content: flex-start; /* Align stacked items left */
+             align-items: stretch; /* Make items fill width */
+         }
+        #timer, #coinCounter, #fireRateDisplay, #healthDisplay {
+            font-size: 15px; /* Slightly smaller */
+            margin: 3px 5px;
+            padding: 4px 8px;
+            width: calc(50% - 10px); /* Two items per row approx */
+            text-align: left;
+            box-sizing: border-box;
+        }
+        #hazardWarning {
+            width: calc(100% - 10px); /* Full width when stacked */
+            font-size: 15px; /* Slightly smaller */
+            text-align: center;
+         }
+
+        #joystick-container { width: 100px; height: 100px; bottom: 20px; left: 20px; }
+        #joystick-handle { width: 40px; height: 40px; }
+        #action-buttons { bottom: 20px; right: 20px; gap: 10px; }
+        .action-btn { font-size: 12px; padding: 10px 15px; min-width: 130px; }
+        img.responsive { max-height: 200px; margin: 15px auto; }
+        #game-controls button { font-size: 12px; padding: 6px 15px; min-width: 80px; margin: 3px 5px; } /* Adjust margin */
+    }
+
+    @media (max-width: 480px) {
+        #game-title { font-size: 2.2em; }
+        button { padding: 10px 25px; font-size: 14px; min-width: 150px; }
+        .container ul { max-width: 95%; }
+        .container ul li { padding-left: 20px; font-size: 0.9em; }
+        #timer, #coinCounter, #fireRateDisplay, #healthDisplay, #hazardWarning {
+             font-size: 13px; /* Even smaller */
+             width: calc(100% - 10px); /* Stack all items vertically */
+             text-align: left;
+         }
+        #hazardWarning { text-align: center; }
+
+        #joystick-container { width: 90px; height: 90px; bottom: 15px; left: 15px; }
+        #joystick-handle { width: 35px; height: 35px; }
+        #action-buttons { bottom: 15px; right: 15px; }
+        .action-btn { font-size: 11px; padding: 8px 12px; min-width: 110px; }
+        img.responsive { max-height: 150px; }
+        #game-controls { padding: 5px 0; }
+        #game-controls button { font-size: 11px; padding: 5px 10px; min-width: 70px; margin: 2px 3px; } /* Adjust margin */
+    }
+
+    </style>
+    <!-- Link to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Image -->
+    <img src="loadingscreenimageSpaceEscape.png" alt="Spacescape Loading" class="responsive">
+
+    <!-- Top Game Controls (Visible during Gameplay) -->
+    <div id="game-controls">
+        <button id="game-menu-button">Menu</button>
+        <button id="game-restart-button">Restart</button>
+        <button id="game-instructions-button">Instructions</button>
+    </div>
+
+    <!-- Heads Up Display (Visible during Gameplay) -->
+    <div id="hud">
+        <div id="timer">Time: 0</div>
+        <div id="coinCounter">Coins: 0</div>
+        <div id="fireRateDisplay">Fire Rate: 2.00</div>
+        <div id="healthDisplay">Health: 3</div>
+        <div id="hazardWarning"></div> <!-- Warning message area -->
+    </div>
+
+    <!-- Start Menu Screen -->
+    <div id="start-menu-screen" class="active screen">
+        <div class="container">
+            <h1 id="game-title">Spacescape</h1>
+            <button id="play-button">Play</button>
+            <button id="settings-button">Settings</button>
+            <button id="instructions-button">Instructions</button>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="container">
+            <h2>Settings</h2>
+            <p>There are no settings at the moment.</p>
+            <button id="settings-back-button">Back</button>
+        </div>
+    </div>
+
+    <!-- Instructions Screen -->
+    <div id="instructions-screen" class="screen">
+        <div class="container">
+            <h2>Instructions</h2>
+            <h3>How to Play:</h3>
+            <ul>
+                <li>Move with WASD keys or Left Joystick</li>
+                <li>Aim with mouse or Tap/Hold Screen</li>
+                <li>Shoot automatically when mouse button down or screen held</li>
+                <li>Press 1 or Tap 'Upgrade' Button to upgrade fire rate (costs 5 coins)</li>
+                <li>Press 2 or Tap 'Place Turret' Button to place tower (costs 10 coins)</li>
+                <li>Press Q or Tap 'Switch Dim' Button to switch dimensions</li>
+                <li>Collect coins from defeated enemies</li>
+                <li>Avoid hazards: asteroids (shootable, +1 HP), solar flares (speed up enemies), debris (damages all)</li>
+                <li>Enemies: Zephyr (Zigzag), Nebula (Spiral/Shoot), Void Mine Layer (Drops mines)</li>
+                <li>Joystick will only work with touch controls</li>
+            </ul>
+            <button id="instructions-back-button">Back</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <!-- Container for Canvas and Touch Controls -->
+        <div id="game-container">
+            <canvas id="gameCanvas"></canvas>
+            <!-- Joystick -->
+            <div id="joystick-container">
+                <div id="joystick-base"></div>
+                <div id="joystick-handle"></div>
+            </div>
+            <!-- Action Buttons -->
+            <div id="action-buttons">
+                <button id="turret-button" class="action-btn">Place Turret (10)</button>
+                <button id="upgrade-button" class="action-btn">Upgrade Fire Rate (5)</button>
+                <button id="dimension-switch-button" class="action-btn">Switch Dim (Q)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen">
+        <div class="container">
+            <h2>Game Over</h2>
+            <div id="game-over-message">You survived for 0 seconds!</div>
+            <button id="play-again-button">Play Again</button>
+            <button id="main-menu-button">Main Menu</button>
+        </div>
+    </div>
+
+    <!-- ALL AUDIO HTML -->
+    <audio id="lobby-music" loop><source src="GameIntro.wav" type="audio/mpeg" /></audio>
+    <audio id="background-music" loop><source src="background-music.mp3" type="audio/mpeg" /></audio>
+    <audio id="gameover-music"><source src="GameOverSound.wav" type="audio/wav"></audio>
+    <audio id="turret-place-sound" src="turret_place.wav"></audio>
+    <audio id="turret-death-sound" src="turret_death.mp3"></audio>
+    <audio id="turret-shoot-sound" src="ship_shoot.wav"></audio>
+    <audio id="ship-move-sound" src="ship_move.mp3" loop></audio>
+    <audio id="ship-shoot-sound" src="ship_shoot.wav"></audio>
+    <audio id="ship-destroy-sound" src="ship_destroy.mp3"></audio>
+    <audio id="attack-upgrade-sound" src="attack_upgrade.wav"></audio>
+    <audio id="enemy-death-sound" src="enemy_death.mp3"></audio>
+    <!-- Hazard Audio -->
+    <audio id="asteroid-hit-sound" src="asteroid_hit.mp3"></audio>
+    <audio id="solar-flare-sound" src="solar_flare.mp3"></audio>
+    <audio id="debris-sound" src="debris_sound.mp3"></audio>
+    <!-- Void Mine Audio (Optional) -->
+    <audio id="mine-place-sound" src="mine_place.wav"></audio> <!-- Add sound effect element -->
+    <audio id="mine-explode-sound" src="mine_explode.wav"></audio> <!-- Add sound effect element -->
+    <audio id="dimension-switch-sound" src="dimension_switch.wav"></audio>
+
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        class GameUI {
+            constructor() {
+                this.startMenuScreen = document.getElementById("start-menu-screen");
+                this.settingsScreen = document.getElementById("settings-screen");
+                this.instructionsScreen = document.getElementById("instructions-screen");
+                this.gameScreen = document.getElementById("game-screen");
+                this.gameOverScreen = document.getElementById("game-over-screen");
+                this.gameControls = document.getElementById("game-controls");
+                this.hud = document.getElementById("hud");
+                this.gameContainer = document.getElementById("game-container"); // Get game container
+
+                this.canvas = document.getElementById("gameCanvas");
+                // Defer getting context until needed, handled by GameLogic.getCtx()
+                // this.ctx = this.canvas.getContext("2d");
+                this.timerElement = document.getElementById("timer");
+                this.coinCounterElement = document.getElementById("coinCounter");
+                this.fireRateDisplayElement = document.getElementById("fireRateDisplay");
+                this.healthDisplayElement = document.getElementById("healthDisplay");
+                this.hazardWarningElement = document.getElementById("hazardWarning");
+                this.gameOverMessageElement = document.getElementById("game-over-message"); // Get game over message element
+
+                this.joystickContainer = document.getElementById("joystick-container");
+                this.joystickHandle = document.getElementById("joystick-handle");
+                this.actionButtons = document.getElementById("action-buttons");
+
+                this.sounds = { // Pre-load sound elements
+                    lobbyMusic: document.getElementById("lobby-music"),
+                    backgroundMusic: document.getElementById("background-music"),
+                    gameOverMusic: document.getElementById("gameover-music"),
+                    turretPlacement: document.getElementById("turret-place-sound"),
+                    turretDeath: document.getElementById("turret-death-sound"),
+                    turretShoot: document.getElementById("turret-shoot-sound"),
+                    shipMove: document.getElementById("ship-move-sound"),
+                    shipShoot: document.getElementById("ship-shoot-sound"),
+                    shipDestroy: document.getElementById("ship-destroy-sound"),
+                    attackUpgrade: document.getElementById("attack-upgrade-sound"),
+                    enemyDeath: document.getElementById("enemy-death-sound"),
+                    asteroidHit: document.getElementById("asteroid-hit-sound"),
+                    solarFlare: document.getElementById("solar-flare-sound"),
+                    debris: document.getElementById("debris-sound"),
+                    minePlace: document.getElementById("mine-place-sound"), // Added
+                    mineExplode: document.getElementById("mine-explode-sound"), // Added
+                    dimensionSwitch: document.getElementById("dimension-switch-sound"), // Added
+                };
+            }
+
+            // *** FIX: Enhanced adjustGameContainerLayout using requestAnimationFrame ***
+            adjustGameContainerLayout() {
+                // Use rAF to ensure layout calculations happen after potential style changes
+                requestAnimationFrame(() => {
+                    // Calculate the combined height of controls and HUD only if they are displayed
+                    const controlsHeight = this.gameControls.style.display !== 'none' ? this.gameControls.offsetHeight : 0;
+                    // Set HUD top based on controls height
+                    this.hud.style.top = `${controlsHeight}px`;
+                    const hudHeight = this.hud.style.display !== 'none' ? this.hud.offsetHeight : 0;
+                    const totalOffset = controlsHeight + hudHeight;
+
+                    // Set top and height for the game container
+                    this.gameContainer.style.top = `${totalOffset}px`;
+                    this.gameContainer.style.height = `calc(100vh - ${totalOffset}px)`;
+
+                    // Explicitly resize canvas AFTER container dimensions are set
+                    this.resizeCanvas();
+                });
+            }
+
+
+            swapToScreen(screen) {
+                // Hide all screens first
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                // Show the target screen
+                screen.classList.add("active");
+
+                 // Handle lobby music
+                 if (screen.id === "start-menu-screen") {
+                    this.sounds.backgroundMusic.pause();
+                    this.sounds.backgroundMusic.currentTime = 0;
+                    this.sounds.lobbyMusic.play().catch(e => console.warn("Lobby music play failed:", e));
+                 } else {
+                    this.sounds.lobbyMusic.pause();
+                    this.sounds.lobbyMusic.currentTime = 0;
+                 }
+
+                if (screen.id === "game-screen") {
+                    // Ensure controls and HUD are visible *before* calculating layout
+                    this.hud.style.display = "flex"; // Use flex as defined in CSS
+                    this.gameControls.style.display = "block"; // Or 'flex' if layout changes
+
+                    // Show joystick/buttons (CSS rules also handle this via .active)
+                    this.joystickContainer.style.display = "block";
+                    this.actionButtons.style.display = "flex";
+
+                    // Trigger layout adjustment (which includes canvas resize)
+                    this.adjustGameContainerLayout();
+
+                } else {
+                    // Hide game-specific elements when not on game screen
+                    this.hud.style.display = "none";
+                    this.gameControls.style.display = "none";
+                    this.joystickContainer.style.display = "none";
+                    this.actionButtons.style.display = "none";
+
+                    // Reset game container styles if needed when leaving game screen
+                    this.gameContainer.style.top = '0px'; // Reset to default
+                    this.gameContainer.style.height = '100%'; // Reset to default
+
+                     // Reset canvas size for non-game screens if necessary
+                     if(this.canvas){
+                        this.canvas.width = 0;
+                        this.canvas.height = 0;
+                     }
+                }
+            }
+
+            resetJoystick() {
+                 if(this.joystickHandle){
+                    // Reset transform for visual position
+                    this.joystickHandle.style.transform = 'translate(-50%, -50%)';
+                 }
+            }
+
+            resizeCanvas() {
+                 const container = this.gameContainer; // Use game container as reference
+                 if (container && this.canvas) {
+                    // Set canvas drawing buffer size to match container's client size
+                    this.canvas.width = container.clientWidth;
+                    this.canvas.height = container.clientHeight;
+                 } else {
+                      console.warn("Canvas or container not found during resize.");
+                 }
+            }
+
+            startGame() {
+                // Stop lobby music, start background music
+                this.sounds.lobbyMusic.pause();
+                this.sounds.lobbyMusic.currentTime = 0;
+                this.sounds.backgroundMusic.play().catch((error) => {
+                    console.warn("Background music failed to play:", error);
+                });
+                this.swapToScreen(this.gameScreen); // This now handles layout adjustment
+            }
+
+            // *** FIX: Corrected endGame to update message ***
+            endGame() {
+                const backgroundMusic = this.sounds.backgroundMusic;
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0;
+                const gameOverMusic = this.sounds.gameOverMusic;
+                gameOverMusic.play().catch((error) => console.warn("Error playing game over music:", error));
+
+                // Update game over message with final time
+                if (this.gameOverMessageElement && this.timerElement) {
+                    // Extract time value correctly
+                    const timeText = this.timerElement.textContent.replace('Time: ','');
+                    this.gameOverMessageElement.textContent = `You survived for ${timeText} seconds!`;
+                } else {
+                     if (this.gameOverMessageElement) {
+                        this.gameOverMessageElement.textContent = `Game Over!`;
+                     }
+                }
+                this.swapToScreen(this.gameOverScreen);
+            }
+
+            mainMenu() { this.swapToScreen(this.startMenuScreen); }
+            settings() { this.swapToScreen(this.settingsScreen); }
+            instructions() { this.swapToScreen(this.instructionsScreen); }
+
+            updateHUD(time, coins, fireRate, health, hazardWarning) {
+                this.timerElement.textContent = `Time: ${time.toFixed(1)}`;
+                this.coinCounterElement.textContent = `Coins: ${coins}`;
+                this.fireRateDisplayElement.textContent = `Fire Rate: ${fireRate.toFixed(2)}`;
+                this.healthDisplayElement.textContent = `Health: ${health}`;
+                this.hazardWarningElement.textContent = hazardWarning || "";
+                // Show/hide warning div based on content
+                this.hazardWarningElement.style.display = hazardWarning ? 'block' : 'none';
+            }
+        }
+
+        class GameLogic {
+            constructor(ui) {
+                this.ui = ui;
+                this.ctx = null; // Initialize context as null, get it later
+
+                this.currentDimension = 0; // 0 for Dimension A, 1 for Dimension B
+
+                this.gameOver = false;
+                this.startTime = null;
+                this.elapsedTime = 0;
+                this.lastFrameTime = 0; // Use performance.now()
+                this.coinCount = 0;
+                this.fireRate = 6; // Shots per second
+                this.playerHealth = 5; // Initial health
+                this.maxPlayerHealth = 5; // Max health
+
+                this.player = { x: 0, y: 0, size: 40, speed: 200 }; // Player size, Speed in pixels/second
+                
+                // Dimension-specific entity arrays
+                this.projectiles = [[], []]; // [dimA_projectiles, dimB_projectiles]
+                this.enemies = [[], []];
+                this.coins = [[], []];
+                this.towers = [[], []];
+                this.asteroids = [[], []];
+                this.debris = [[], []];
+                this.mines = [[], []];
+
+                this.solarFlare = { active: false, warningTime: 0, duration: 0 }; // Solar flare might be global or dimension-specific; let's assume global for now for simplicity unless specified otherwise. If dimension-specific, it would become an array too.
+
+
+                this.projectileSpeed = 400; // pixels/second
+                this.projectileDamage = 1;
+                this.enemySize = 35; // Slightly larger enemies
+                this.enemyBaseSpeed = 80; // Base speed pixels/second
+                this.spawnRate = 0.6; // Enemies per second BASE rate
+                this.coinSize = 15; // Smaller coins
+                this.towerSize = 45; // Slightly smaller towers
+                this.towerRange = 250; // Range in pixels
+                this.towerFireRate = 1; // Shots per second
+                this.towerHealth = 5; // Tower health
+                this.asteroidSize = 80; // Smaller asteroids
+                this.asteroidHealth = 3; // Tougher asteroids
+                this.asteroidBaseSpeed = 60; // pixels/second
+                this.debrisSize = 5;
+                this.debrisBaseSpeed = 150; // pixels/second
+
+                this.isShooting = false;
+                this.keys = { w: false, a: false, s: false, d: false, q: false }; // Added 'q'
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.touchX = 0;
+                this.touchY = 0;
+                this.isTouching = false; // Track if screen touch is for aiming/shooting
+                this.isMoving = false;
+                this.moveSoundPlaying = false;
+
+                // Timers (in seconds)
+                this.timeSinceLastSpawn = 0; 
+                this.timeSinceLastShot = 0;
+                this.timeSinceLastHazard = 0;
+                // These timers are for spawning within the current dimension.
+                // If they need to be independent per dimension, they'd also become arrays.
+                // For now, assume they reset or are relevant to the active dimension's spawning logic.
+                this.timeSinceLastZephyrScout = 5;
+                this.timeSinceLastNebulaStalker = 10;
+                this.timeSinceLastVoidMineLayer = 15;
+
+                this.joystickActive = false;
+                this.joystickX = 0;
+                this.joystickY = 0;
+
+                // Image Loading
+                this.images = {};
+                this.imageSources = {
+                    player: "player.png",
+                    zephyrScout: "enemy.png",
+                    nebulaStalker: "nebula_stalker.png",
+                    solarCharger: "solarCharger.png", 
+                    fractalShard: "fractalShard.png", 
+                    voidMineLayer: "voidMineLayer.png", 
+                    coin: "coin.png",
+                    backgroundDimA: "background.png", // Renamed for clarity
+                    backgroundDimB: "background_dimB.png", // For dimension B
+                    tower: "tower.png",
+                    asteroid: "asteroid.png",
+                    mine: "mine.png"
+                };
+                this.activeBackgroundImage = null; // Will be set after images load
+                this.imagesLoaded = 0;
+                this.totalImages = Object.keys(this.imageSources).length;
+                this.allImagesLoaded = false;
+                this.loadImages(); // Start loading images
+
+                // Enemy type definitions (speed in pixels/sec)
+                 this.enemyTypes = {
+                    zephyrScout: { health: 1, speed: 100, damageToPlayer: 1, damageToTower: 1, zigzagTimer: 0, zigzagDirection: 1, zigzagAmplitude: 80 },
+                    nebulaStalker: { health: 3, speed: 90, damageToPlayer: 1, damageToTower: 1, circleRadius: 300, circleAngle: 0, shotTimer: 0, projectileSpeed: 200, shootInterval: 4.0 },
+                    solarCharger: { health: 2, speed: 120, damageToPlayer: 2, damageToTower: 2, chargeTarget: null, explosionRadius: 50, slowSpeed: 75 },
+                    fractalShard: { health: 4, speed: 70, damageToPlayer: 0.5, damageToTower: 0.5, spiralAngle: 0, shardHealth: 1, shardSpeed: 50 },
+                    voidMineLayer: { health: 5, speed: 60, damageToPlayer: 1.5, damageToTower: 1.5, damageToEnemies: 1.0, mineTimer: 0, mineInterval: 6.0, maxMines: 3, mineLifespan: 10, mineRadius: 10, mineExplosionRadius: 60 } 
+                };
+
+                this.currentHazardWarning = ""; 
+
+                this.setupEventListeners();
+            }
+
+            loadImages() {
+                 this.allImagesLoaded = false;
+                 this.imagesLoaded = 0;
+                for (const key in this.imageSources) {
+                    this.images[key] = new Image();
+                    this.images[key].onload = () => {
+                        this.imagesLoaded++;
+                        if (this.imagesLoaded === this.totalImages) {
+                            this.allImagesLoaded = true;
+                            this.activeBackgroundImage = this.images.backgroundDimA; // Set initial background
+                            console.log("All images loaded successfully.");
+                        }
+                    };
+                    this.images[key].onerror = () => {
+                        console.error(`Failed to load image: ${key} at ${this.imageSources[key]}`);
+                        this.imagesLoaded++;
+                         if (this.imagesLoaded === this.totalImages) {
+                             this.allImagesLoaded = true; 
+                             this.activeBackgroundImage = this.images.backgroundDimA; // Still set default if some fail
+                             console.warn("Finished loading images, but some failed.");
+                         }
+                    };
+                    this.images[key].src = this.imageSources[key];
+                }
+            }
+
+            getCtx() {
+                 if (!this.ctx && this.ui.canvas) {
+                    this.ctx = this.ui.canvas.getContext('2d');
+                    if(!this.ctx){
+                         console.error("Failed to get 2D context from canvas.");
+                    }
+                 }
+                 return this.ctx;
+            }
+
+
+            setupEventListeners() {
+                let resizeTimeout;
+                window.addEventListener("resize", () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.ui.adjustGameContainerLayout(); 
+                        const canvasWidth = this.ui.canvas.width;
+                        const canvasHeight = this.ui.canvas.height;
+                        if(canvasWidth && canvasHeight && this.player){
+                            this.player.x = Math.max(this.player.size / 2, Math.min(canvasWidth - this.player.size / 2, this.player.x));
+                            this.player.y = Math.max(this.player.size / 2, Math.min(canvasHeight - this.player.size / 2, this.player.y));
+                        }
+                    }, 150); 
+                 });
+
+                window.addEventListener("mousemove", (e) => {
+                     const rect = this.ui.canvas.getBoundingClientRect();
+                     this.mouseX = e.clientX - rect.left;
+                     this.mouseY = e.clientY - rect.top;
+                 });
+                window.addEventListener("mousedown", (e) => {
+                     const rect = this.ui.canvas.getBoundingClientRect();
+                     if(e.clientX >= rect.left && e.clientX <= rect.right &&
+                        e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                           if (e.button === 0) this.isShooting = true;
+                     }
+                 });
+                window.addEventListener("mouseup", (e) => {
+                    if (e.button === 0) this.isShooting = false;
+                });
+                 this.ui.gameContainer.addEventListener('contextmenu', e => e.preventDefault());
+
+                window.addEventListener("keydown", (e) => {
+                    if (e.key === "w" || e.key === "W") this.keys.w = true;
+                    if (e.key === "a" || e.key === "A") this.keys.a = true;
+                    if (e.key === "s" || e.key === "S") this.keys.s = true;
+                    if (e.key === "d" || e.key === "D") this.keys.d = true;
+                    if (e.key === "q" || e.key === "Q") this.keys.q = true; // Listen for Q
+
+                    if (!this.gameOver) {
+                         if (e.key === "1") this.upgradeFireRate();
+                         if (e.key === "2") this.placeTower();
+                         if (this.keys.q) { // Use the state of this.keys.q
+                            this.switchDimension();
+                            this.keys.q = false; // Reset after action to prevent rapid switching on hold
+                         }
+                    }
+                });
+                window.addEventListener("keyup", (e) => {
+                    if (e.key === "w" || e.key === "W") this.keys.w = false;
+                    if (e.key === "a" || e.key === "A") this.keys.a = false;
+                    if (e.key === "s" || e.key === "S") this.keys.s = false;
+                    if (e.key === "d" || e.key === "D") this.keys.d = false;
+                    // No need to set this.keys.q to false on keyup if it's consumed on keydown
+                });
+
+                 const gameArea = this.ui.gameContainer;
+                 gameArea.addEventListener("touchstart", (e) => {
+                      let targetElement = e.target;
+                      let isControl = false;
+                      while(targetElement && targetElement !== gameArea){
+                          if(targetElement.id === 'joystick-container' || targetElement.closest('#joystick-container') || targetElement.closest('#action-buttons')){
+                              isControl = true;
+                              break;
+                          }
+                          targetElement = targetElement.parentElement;
+                      }
+
+                      if (!isControl) {
+                         e.preventDefault();
+                         this.isTouching = true; 
+                         this.isShooting = true;
+                         const touch = e.touches[0];
+                         const rect = this.ui.canvas.getBoundingClientRect();
+                         this.touchX = this.mouseX = touch.clientX - rect.left;
+                         this.touchY = this.mouseY = touch.clientY - rect.top;
+                      }
+                 }, { passive: false });
+
+                 gameArea.addEventListener("touchmove", (e) => {
+                      if (this.isTouching) { 
+                         e.preventDefault();
+                         const touch = e.touches[0];
+                         const rect = this.ui.canvas.getBoundingClientRect();
+                         this.touchX = this.mouseX = touch.clientX - rect.left;
+                         this.touchY = this.mouseY = touch.clientY - rect.top;
+                      }
+                 }, { passive: false });
+
+                 gameArea.addEventListener("touchend", (e) => {
+                     let aimingTouchEnded = false;
+                     for (let i = 0; i < e.changedTouches.length; i++) {
+                         const touch = e.changedTouches[i];
+                         const rect = this.ui.canvas.getBoundingClientRect();
+                         const endX = touch.clientX - rect.left;
+                         const endY = touch.clientY - rect.top;
+                         if (Math.abs(endX - this.touchX) < 50 && Math.abs(endY - this.touchY) < 50) {
+                            aimingTouchEnded = true;
+                            break;
+                         }
+                     }
+                     let remainingAimingTouches = 0;
+                     for (let i = 0; i < e.touches.length; i++) {
+                        let targetElement = e.touches[i].target;
+                        let isControl = false;
+                        while(targetElement && targetElement !== gameArea){
+                            if(targetElement.id === 'joystick-container' || targetElement.closest('#joystick-container') || targetElement.closest('#action-buttons')){
+                                isControl = true;
+                                break;
+                            }
+                            targetElement = targetElement.parentElement;
+                        }
+                        if (!isControl) remainingAimingTouches++;
+                     }
+                      if (this.isTouching && (aimingTouchEnded || remainingAimingTouches === 0)) {
+                         this.isTouching = false;
+                         this.isShooting = false;
+                     }
+                 }, { passive: false });
+
+                const joystickBase = document.getElementById("joystick-base");
+                const joystickHandle = this.ui.joystickHandle;
+                 let joystickTouchId = null; 
+
+                 if(joystickBase && joystickHandle){ 
+                     joystickBase.addEventListener("touchstart", (e) => {
+                         e.preventDefault();
+                         e.stopPropagation(); 
+                         if(joystickTouchId === null) { 
+                             joystickTouchId = e.changedTouches[0].identifier;
+                             this.joystickActive = true;
+                         }
+                     }, { passive: false });
+
+                     joystickBase.addEventListener("touchmove", (e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         if (!this.joystickActive) return;
+                         let currentTouch = null;
+                         for(let i=0; i<e.changedTouches.length; i++){
+                             if(e.changedTouches[i].identifier === joystickTouchId){
+                                 currentTouch = e.changedTouches[i];
+                                 break;
+                             }
+                         }
+                         if (!currentTouch) {
+                             for(let i=0; i<e.touches.length; i++){
+                                 if(e.touches[i].identifier === joystickTouchId){
+                                     currentTouch = e.touches[i];
+                                     break;
+                                 }
+                             }
+                         }
+                         if(!currentTouch) return; 
+
+                         const rect = joystickBase.getBoundingClientRect();
+                         const centerX = rect.left + rect.width / 2;
+                         const centerY = rect.top + rect.height / 2;
+                         let dx = currentTouch.clientX - centerX;
+                         let dy = currentTouch.clientY - centerY;
+                         const distance = Math.sqrt(dx * dx + dy * dy);
+                         const maxDistance = rect.width / 2; 
+                          let clampedX = dx;
+                          let clampedY = dy;
+                         if (distance > maxDistance) {
+                             clampedX = (dx / distance) * maxDistance;
+                             clampedY = (dy / distance) * maxDistance;
+                         }
+                         joystickHandle.style.transform = `translate(-50%, -50%) translate(${clampedX}px, ${clampedY}px)`;
+                          const handleRadius = joystickHandle.offsetWidth / 2;
+                          const handleMaxTravel = maxDistance - handleRadius; 
+                         this.joystickX = (handleMaxTravel > 0) ? clampedX / handleMaxTravel : 0;
+                         this.joystickY = (handleMaxTravel > 0) ? clampedY / handleMaxTravel : 0;
+                         this.joystickX = Math.max(-1, Math.min(1, this.joystickX));
+                         this.joystickY = Math.max(-1, Math.min(1, this.joystickY));
+                     }, { passive: false });
+
+                     const resetJoystickAndSound = (e) => {
+                         let relevantTouchEnded = false;
+                          if (e && e.changedTouches) {
+                              for(let i=0; i<e.changedTouches.length; i++){
+                                  if(e.changedTouches[i].identifier === joystickTouchId){
+                                      relevantTouchEnded = true;
+                                      break;
+                                  }
+                              }
+                          } else {
+                               relevantTouchEnded = true;
+                           }
+                         if (this.joystickActive && relevantTouchEnded) {
+                             this.joystickActive = false;
+                             this.joystickX = 0;
+                             this.joystickY = 0;
+                             joystickHandle.style.transform = 'translate(-50%, -50%)'; 
+                             joystickTouchId = null; 
+                             if (this.moveSoundPlaying) {
+                                 this.ui.sounds.shipMove.pause();
+                                 this.ui.sounds.shipMove.currentTime = 0;
+                                 this.moveSoundPlaying = false;
+                             }
+                         }
+                     };
+                     joystickBase.addEventListener("touchend", (e) => {
+                         e.preventDefault();
+                          e.stopPropagation();
+                         resetJoystickAndSound(e);
+                     }, { passive: false });
+                      joystickBase.addEventListener("touchleave", resetJoystickAndSound, { passive: false });
+                      joystickBase.addEventListener("touchcancel", resetJoystickAndSound, { passive: false });
+                 } else {
+                     console.warn("Joystick elements not found.");
+                 }
+
+                // Action button listeners
+                const turretButton = document.getElementById("turret-button");
+                const upgradeButton = document.getElementById("upgrade-button");
+                // The new dimension switch button listener will be added in Game.assignButtons
+
+                const handlePlaceTower = (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.placeTower();
+                }
+                const handleUpgradeFireRate = (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.upgradeFireRate();
+                }
+
+                if (turretButton) {
+                    turretButton.addEventListener("touchstart", handlePlaceTower, { passive: false });
+                    turretButton.addEventListener("click", handlePlaceTower); 
+                }
+                if (upgradeButton) {
+                    upgradeButton.addEventListener("touchstart", handleUpgradeFireRate, { passive: false });
+                    upgradeButton.addEventListener("click", handleUpgradeFireRate); 
+                }
+            }
+
+            switchDimension() {
+                if (!this.allImagesLoaded) return; // Don't switch if images (especially backgrounds) aren't ready
+
+                this.currentDimension = 1 - this.currentDimension; // Toggle 0 and 1
+                console.log("Switched to dimension:", this.currentDimension === 0 ? "A" : "B");
+
+                // Play switch sound
+                this.ui.sounds.dimensionSwitch?.play().catch(e => console.warn("Dimension switch sound play failed:", e));
+
+                // Change background image
+                this.activeBackgroundImage = (this.currentDimension === 0) ? this.images.backgroundDimA : this.images.backgroundDimB;
+                if (!this.activeBackgroundImage || !this.activeBackgroundImage.complete || this.activeBackgroundImage.naturalWidth === 0) {
+                    console.warn(`Background image for dimension ${this.currentDimension === 0 ? "A" : "B"} is not loaded or invalid.`);
+                }
+                // The draw() method will pick up activeBackgroundImage
+            }
+
+
+            reset() {
+                this.gameOver = false;
+                this.getCtx();
+                const canvasWidth = this.ui.canvas?.width || window.innerWidth;
+                const canvasHeight = this.ui.canvas?.height || window.innerHeight;
+                if(this.player) {
+                  this.player.x = canvasWidth / 2;
+                  this.player.y = canvasHeight / 2;
+                }
+
+                this.currentDimension = 0; // Reset to Dimension A
+                if (this.allImagesLoaded) { // Ensure images are loaded before accessing
+                    this.activeBackgroundImage = this.images.backgroundDimA;
+                }
+
+
+                this.playerHealth = this.maxPlayerHealth; 
+                this.enemies = [[], []]; 
+                this.projectiles = [[], []];
+                this.coins = [[], []];
+                this.towers = [[], []];
+                this.asteroids = [[], []];
+                this.debris = [[], []];
+                this.mines = [[], []]; 
+                this.solarFlare = { active: false, warningTime: 0, duration: 0 };
+                this.coinCount = 0;
+                this.fireRate = 6; 
+                this.startTime = null; 
+                this.elapsedTime = 0;
+                this.lastFrameTime = performance.now(); 
+                this.timeSinceLastSpawn = 0;
+                this.timeSinceLastShot = 0;
+                this.timeSinceLastHazard = 0;
+                this.timeSinceLastZephyrScout = 5; 
+                this.timeSinceLastNebulaStalker = 10;
+                this.timeSinceLastVoidMineLayer = 15; 
+
+                this.joystickActive = false;
+                this.joystickX = 0;
+                this.joystickY = 0;
+                this.ui.resetJoystick(); 
+
+                 if (this.moveSoundPlaying) {
+                     this.ui.sounds.shipMove.pause();
+                     this.ui.sounds.shipMove.currentTime = 0;
+                     this.moveSoundPlaying = false;
+                 }
+            }
+
+            movePlayer(deltaTime) {
+                this.isMoving = false;
+                const currentSpeed = this.player.speed; 
+                const canvasWidth = this.ui.canvas?.width;
+                const canvasHeight = this.ui.canvas?.height;
+                if (!canvasWidth || !canvasHeight || !this.player) return; 
+
+                const playerHalfSize = this.player.size / 2;
+                 let moveX = 0;
+                 let moveY = 0;
+
+                 if (this.keys.w) moveY -= 1;
+                 if (this.keys.s) moveY += 1;
+                 if (this.keys.a) moveX -= 1;
+                 if (this.keys.d) moveX += 1;
+
+                 if (this.joystickActive && (this.joystickX !== 0 || this.joystickY !== 0)) {
+                     moveX = this.joystickX;
+                     moveY = this.joystickY;
+                 }
+                 this.isMoving = (moveX !== 0 || moveY !== 0);
+                 const magnitude = Math.sqrt(moveX * moveX + moveY * moveY);
+                 if (magnitude > 1) { 
+                     moveX /= magnitude;
+                     moveY /= magnitude;
+                 }
+                 const deltaMoveX = moveX * currentSpeed * deltaTime;
+                 const deltaMoveY = moveY * currentSpeed * deltaTime;
+                this.player.x = Math.max(playerHalfSize, Math.min(canvasWidth - playerHalfSize, this.player.x + deltaMoveX));
+                this.player.y = Math.max(playerHalfSize, Math.min(canvasHeight - playerHalfSize, this.player.y + deltaMoveY));
+
+                if (this.isMoving && !this.moveSoundPlaying) {
+                    this.ui.sounds.shipMove.play().catch((error) => console.warn("Error playing ship move sound:", error));
+                    this.moveSoundPlaying = true;
+                } else if (!this.isMoving && this.moveSoundPlaying) {
+                    this.ui.sounds.shipMove.pause();
+                    this.ui.sounds.shipMove.currentTime = 0;
+                    this.moveSoundPlaying = false;
+                }
+            }
+
+            shootProjectile() {
+                 if (!this.player || !this.ui.canvas) return;
+                 const angle = Math.atan2(this.mouseY - this.player.y, this.mouseX - this.player.x);
+                 const vx = Math.cos(angle) * this.projectileSpeed; 
+                 const vy = Math.sin(angle) * this.projectileSpeed;
+
+                 this.projectiles[this.currentDimension].push({ // Add to current dimension
+                     x: this.player.x,
+                     y: this.player.y,
+                     size: 5, 
+                     vx, vy, 
+                     type: 'playerShot', 
+                     source: 'player' 
+                 });
+                const sound = this.ui.sounds.shipShoot;
+                if (sound) {
+                    const clone = sound.cloneNode();
+                    clone.volume = sound.volume; 
+                    clone.play().catch(e => console.warn("Shoot sound clone play failed", e));
+                }
+            }
+
+             spawnEnemy(deltaTime) {
+                 const canvasWidth = this.ui.canvas?.width;
+                 const canvasHeight = this.ui.canvas?.height;
+                 if (!canvasWidth || !canvasHeight) return; 
+
+                 const timeMultiplier = 1 + (this.elapsedTime / 90); 
+                 const currentSpawnRate = this.spawnRate * timeMultiplier;
+
+                 this.timeSinceLastZephyrScout += deltaTime;
+                 const zephyrInterval = 2.0 / currentSpawnRate; 
+                 if (this.timeSinceLastZephyrScout >= zephyrInterval) {
+                     this.spawnSpecificEnemy('zephyrScout');
+                     this.timeSinceLastZephyrScout = (Math.random() - 0.25) * zephyrInterval; 
+                 }
+
+                 this.timeSinceLastNebulaStalker += deltaTime;
+                  const nebulaInterval = 6.0 / currentSpawnRate; 
+                 if (this.timeSinceLastNebulaStalker >= nebulaInterval) {
+                     this.spawnSpecificEnemy('nebulaStalker');
+                     this.timeSinceLastNebulaStalker = (Math.random() - 0.25) * nebulaInterval; 
+                 }
+
+                 this.timeSinceLastVoidMineLayer += deltaTime;
+                 const mineLayerInterval = 18.0 / timeMultiplier; 
+                 if (this.timeSinceLastVoidMineLayer >= mineLayerInterval && this.elapsedTime > 45) { 
+                     this.spawnSpecificEnemy('voidMineLayer');
+                     this.timeSinceLastVoidMineLayer = (Math.random() - 0.1) * mineLayerInterval; 
+                 }
+             }
+
+            spawnSpecificEnemy(type) {
+                 const canvasWidth = this.ui.canvas.width;
+                 const canvasHeight = this.ui.canvas.height;
+                 const spawnMargin = 50; 
+                 const side = Math.floor(Math.random() * 4);
+                 let x, y;
+                 switch (side) {
+                     case 0: x = Math.random() * canvasWidth; y = -spawnMargin; break;
+                     case 1: x = canvasWidth + spawnMargin; y = Math.random() * canvasHeight; break;
+                     case 2: x = Math.random() * canvasWidth; y = canvasHeight + spawnMargin; break;
+                     case 3: x = -spawnMargin; y = Math.random() * canvasHeight; break;
+                 }
+                 const enemyData = this.enemyTypes[type];
+                 if (!enemyData) {
+                     console.warn(`Enemy type ${type} not found.`);
+                     return;
+                 }
+                 const newEnemy = {
+                     x, y, type,
+                     health: enemyData.health,
+                     speed: enemyData.speed, 
+                     damageToPlayer: enemyData.damageToPlayer,
+                     damageToTower: enemyData.damageToTower,
+                 };
+                  if (type === 'zephyrScout') {
+                     newEnemy.zigzagTimer = 0;
+                     newEnemy.zigzagDirection = (Math.random() < 0.5) ? 1 : -1;
+                     newEnemy.zigzagAmplitude = enemyData.zigzagAmplitude;
+                 } else if (type === 'nebulaStalker') {
+                     newEnemy.circleRadius = enemyData.circleRadius + (Math.random() * 100 - 50); 
+                     newEnemy.circleAngle = Math.random() * Math.PI * 2;
+                     newEnemy.shotTimer = Math.random() * enemyData.shootInterval; 
+                     newEnemy.projectileSpeed = enemyData.projectileSpeed;
+                     newEnemy.shootInterval = enemyData.shootInterval;
+                 } else if (type === 'voidMineLayer') {
+                     newEnemy.mineTimer = Math.random() * enemyData.mineInterval; 
+                     newEnemy.mineInterval = enemyData.mineInterval;
+                     newEnemy.damageToEnemies = enemyData.damageToEnemies; 
+                 }
+                 this.enemies[this.currentDimension].push(newEnemy); // Add to current dimension
+             }
+
+
+            spawnAsteroid() {
+                const canvasWidth = this.ui.canvas?.width;
+                const canvasHeight = this.ui.canvas?.height;
+                if (!canvasWidth || !canvasHeight) return;
+                const spawnMargin = this.asteroidSize; 
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                switch (side) {
+                     case 0: x = Math.random() * canvasWidth; y = -spawnMargin; break;
+                     case 1: x = canvasWidth + spawnMargin; y = Math.random() * canvasHeight; break;
+                     case 2: x = Math.random() * canvasWidth; y = canvasHeight + spawnMargin; break;
+                     case 3: x = -spawnMargin; y = Math.random() * canvasHeight; break;
+                }
+                 let targetX = Math.random() * canvasWidth;
+                 let targetY = Math.random() * canvasHeight;
+                 targetX = canvasWidth / 2 + (Math.random() - 0.5) * canvasWidth * 0.6; 
+                 targetY = canvasHeight / 2 + (Math.random() - 0.5) * canvasHeight * 0.6;
+                const angle = Math.atan2(targetY - y, targetX - x);
+                const speed = this.asteroidBaseSpeed * (Math.random() * 0.8 + 0.6); 
+                this.asteroids[this.currentDimension].push({ // Add to current dimension
+                    x, y,
+                    vx: Math.cos(angle) * speed, 
+                    vy: Math.sin(angle) * speed, 
+                    health: this.asteroidHealth, 
+                    rotation: Math.random() * Math.PI * 2, 
+                    rotationSpeed: (Math.random() - 0.5) * 1.0 
+                });
+            }
+
+            spawnDebris() {
+                const canvasWidth = this.ui.canvas?.width;
+                const canvasHeight = this.ui.canvas?.height;
+                 if (!canvasWidth || !canvasHeight) return;
+                 const numParticles = 30; 
+                 const speed = this.debrisBaseSpeed; 
+                 const spread = 80; 
+                 const side = Math.floor(Math.random() * 4);
+                 let startX, startY, baseVX, baseVY;
+                 switch (side) {
+                     case 0: startX = Math.random() * canvasWidth; startY = -spread; baseVX = 0; baseVY = speed; break;
+                     case 1: startX = canvasWidth + spread; startY = Math.random() * canvasHeight; baseVX = -speed; baseVY = 0; break;
+                     case 2: startX = Math.random() * canvasWidth; startY = canvasHeight + spread; baseVX = 0; baseVY = -speed; break;
+                     case 3: startX = -spread; startY = Math.random() * canvasHeight; baseVX = speed; baseVY = 0; break;
+                 }
+                 for (let i = 0; i < numParticles; i++) {
+                      const angleOffset = (Math.random() - 0.5) * 1.2; 
+                      const speedMultiplier = (Math.random() * 0.5 + 0.75); 
+                      const cosA = Math.cos(angleOffset);
+                      const sinA = Math.sin(angleOffset);
+                      let particleVX = (baseVX * cosA - baseVY * sinA) * speedMultiplier;
+                      let particleVY = (baseVX * sinA + baseVY * cosA) * speedMultiplier;
+                     this.debris[this.currentDimension].push({ // Add to current dimension
+                         x: startX + Math.random() * spread - spread / 2,
+                         y: startY + Math.random() * spread - spread / 2,
+                         vx: particleVX, 
+                         vy: particleVY, 
+                         lifespan: Math.random() * 2 + 3 
+                     });
+                 }
+                 this.ui.sounds.debris.play().catch((error) => console.warn("Error playing debris sound:", error));
+            }
+
+            triggerSolarFlare() {
+                if (!this.solarFlare.active && this.solarFlare.warningTime <= 0) {
+                    this.solarFlare.warningTime = 3; 
+                    this.ui.sounds.solarFlare.play().catch((error) => console.warn("Error playing solar flare sound:", error));
+                }
+            }
+
+            dropCoin(x, y) {
+                 const offsetX = Math.random() * 20 - 10;
+                 const offsetY = Math.random() * 20 - 10;
+                 this.coins[this.currentDimension].push({ // Add to current dimension
+                     x: x + offsetX,
+                     y: y + offsetY,
+                 });
+            }
+
+            upgradeFireRate() {
+                const cost = 5;
+                if (this.coinCount >= cost) {
+                    this.coinCount -= cost;
+                    this.fireRate *= 1.15; 
+                    this.ui.sounds.attackUpgrade.play().catch((error) => console.warn("Error playing attack upgrade sound:", error));
+                     const upgradeButton = document.getElementById('upgrade-button');
+                     if (upgradeButton) upgradeButton.textContent = `Upgrade Fire Rate (${cost})`; 
+                } else {
+                     console.log("Not enough coins to upgrade fire rate.");
+                }
+            }
+
+            placeTower() {
+                const cost = 10;
+                if (this.coinCount >= cost) {
+                    this.coinCount -= cost;
+                    this.towers[this.currentDimension].push({ // Add to current dimension
+                        x: this.player.x,
+                        y: this.player.y,
+                        timeSinceLastShot: 0, 
+                        health: this.towerHealth 
+                    });
+                    this.ui.sounds.turretPlacement.play().catch((error) => console.warn("Error playing turret placement sound:", error));
+                     const turretButton = document.getElementById('turret-button');
+                     if (turretButton) turretButton.textContent = `Place Turret (${cost})`; 
+                } else {
+                     console.log("Not enough coins to place tower.");
+                }
+            }
+
+            updateEnemies(deltaTime) {
+                 const currentEnemies = this.enemies[this.currentDimension];
+                 for (let i = currentEnemies.length - 1; i >= 0; i--) {
+                     const enemy = currentEnemies[i];
+                     const enemyData = this.enemyTypes[enemy.type];
+                     if (!enemyData) { 
+                        console.warn(`Removing enemy with invalid type: ${enemy.type}`);
+                        currentEnemies.splice(i, 1);
+                        continue;
+                     };
+                      const currentEnemySpeed = this.solarFlare.active ? enemy.speed * 1.5 : enemy.speed; 
+                     let target = null;
+                     let minDistSq = Infinity; 
+                     if (this.playerHealth > 0 && this.player) {
+                         target = this.player;
+                        minDistSq = (this.player.x - enemy.x)**2 + (this.player.y - enemy.y)**2;
+                     }
+                     this.towers[this.currentDimension].forEach(tower => { // Check towers in current dimension
+                         const distSq = (tower.x - enemy.x)**2 + (tower.y - enemy.y)**2;
+                         if (distSq < minDistSq) {
+                             minDistSq = distSq;
+                             target = tower;
+                         }
+                     });
+                     if (target) {
+                         if (enemy.type === 'zephyrScout') {
+                             this.updateZephyrScout(enemy, target, currentEnemySpeed, deltaTime);
+                         } else if (enemy.type === 'nebulaStalker') {
+                             this.updateNebulaStalker(enemy, target, currentEnemySpeed, deltaTime);
+                         } else if (enemy.type === 'voidMineLayer') {
+                             this.updateVoidMineLayer(enemy, target, currentEnemySpeed, deltaTime);
+                         }
+                          else {
+                              const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+                              enemy.x += Math.cos(angle) * currentEnemySpeed * deltaTime;
+                              enemy.y += Math.sin(angle) * currentEnemySpeed * deltaTime;
+                          }
+                     } else {
+                         const canvasWidth = this.ui.canvas?.width || 800;
+                         const canvasHeight = this.ui.canvas?.height || 600;
+                         if (enemy.x < 0 || enemy.x > canvasWidth || enemy.y < 0 || enemy.y > canvasHeight) {
+                            const angle = Math.atan2(canvasHeight/2 - enemy.y, canvasWidth/2 - enemy.x); 
+                            enemy.x += Math.cos(angle) * enemy.speed * 0.5 * deltaTime;
+                            enemy.y += Math.sin(angle) * enemy.speed * 0.5 * deltaTime;
+                         }
+                     }
+                 }
+             }
+
+
+            updateZephyrScout(enemy, target, speed, deltaTime) {
+                 const enemyData = this.enemyTypes.zephyrScout;
+                 enemy.zigzagTimer += deltaTime;
+                 if (enemy.zigzagTimer >= 1.0) { 
+                     enemy.zigzagDirection *= -1;
+                     enemy.zigzagTimer = 0;
+                 }
+                 const dx = target.x - enemy.x;
+                 const dy = target.y - enemy.y;
+                 const distance = Math.sqrt(dx * dx + dy * dy);
+                 if (distance < 1) return; 
+                 const normX = dx / distance;
+                 const normY = dy / distance;
+                 const perpX = -normY;
+                 const perpY = normX;
+                 const zigzagSpeed = enemyData.zigzagAmplitude; 
+                 const zigzagDisplacementX = perpX * zigzagSpeed * enemy.zigzagDirection;
+                 const zigzagDisplacementY = perpY * zigzagSpeed * enemy.zigzagDirection;
+                 enemy.x += (normX * speed + zigzagDisplacementX) * deltaTime;
+                 enemy.y += (normY * speed + zigzagDisplacementY) * deltaTime;
+             }
+
+            updateNebulaStalker(enemy, target, speed, deltaTime) {
+                 const enemyData = this.enemyTypes.nebulaStalker;
+                 const targetDistSq = (target.x - enemy.x)**2 + (target.y - enemy.y)**2;
+                 const targetDist = Math.sqrt(targetDistSq);
+                 enemy.shotTimer += deltaTime;
+                 if (enemy.shotTimer >= enemyData.shootInterval) {
+                     const angleToTarget = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+                     const vx = Math.cos(angleToTarget) * enemyData.projectileSpeed; 
+                     const vy = Math.sin(angleToTarget) * enemyData.projectileSpeed;
+                     this.projectiles[this.currentDimension].push({ // Add to current dimension
+                         x: enemy.x, y: enemy.y, size: 8, vx, vy,
+                         type: 'nebulaShot', source: 'enemy', 
+                         targetX: target.x, targetY: target.y 
+                     });
+                     enemy.shotTimer = 0; 
+                 }
+                  const desiredRadius = enemy.circleRadius;
+                  const radiusDecrement = 15 * deltaTime; 
+                  const minRadius = 80; 
+                  enemy.circleRadius = Math.max(minRadius, enemy.circleRadius - radiusDecrement);
+                  const baseAngularSpeed = 0.8; 
+                  const maxAngularSpeed = 2.5;  
+                  const speedFactor = Math.max(1, (enemyData.circleRadius / Math.max(1, enemy.circleRadius))**1.5 );
+                  const angularSpeed = Math.min(maxAngularSpeed, baseAngularSpeed * speedFactor);
+                  enemy.circleAngle += angularSpeed * deltaTime; 
+                  const targetSpiralX = target.x + Math.cos(enemy.circleAngle) * enemy.circleRadius;
+                  const targetSpiralY = target.y + Math.sin(enemy.circleAngle) * enemy.circleRadius;
+                  const moveDx = targetSpiralX - enemy.x;
+                  const moveDy = targetSpiralY - enemy.y;
+                  const moveDist = Math.sqrt(moveDx*moveDx + moveDy*moveDy);
+                  if (moveDist > 1) { 
+                       const moveSpeed = speed * 1.5; 
+                      enemy.x += (moveDx / moveDist) * moveSpeed * deltaTime;
+                      enemy.y += (moveDy / moveDist) * moveSpeed * deltaTime;
+                  }
+             }
+
+             updateVoidMineLayer(enemy, target, speed, deltaTime) {
+                 const enemyData = this.enemyTypes.voidMineLayer;
+                 const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+                 enemy.x += Math.cos(angle) * speed * deltaTime;
+                 enemy.y += Math.sin(angle) * speed * deltaTime;
+                 enemy.mineTimer += deltaTime;
+                 const activeMines = this.mines[this.currentDimension].length; // Check current dimension
+                 if (enemy.mineTimer >= enemyData.mineInterval && activeMines < enemyData.maxMines) {
+                     const behindOffsetX = -Math.cos(angle) * (this.enemySize * 0.6);
+                     const behindOffsetY = -Math.sin(angle) * (this.enemySize * 0.6);
+                     this.mines[this.currentDimension].push({ // Add to current dimension
+                         x: enemy.x + behindOffsetX,
+                         y: enemy.y + behindOffsetY,
+                         lifespan: enemyData.mineLifespan,
+                         radius: enemyData.mineRadius,
+                         explosionRadius: enemyData.mineExplosionRadius,
+                         damageP: enemyData.damageToPlayer,
+                         damageT: enemyData.damageToTower,
+                         damageE: enemyData.damageToEnemies,
+                         warningTime: 1.0 
+                     });
+                     enemy.mineTimer = 0; 
+                     this.ui.sounds.minePlace?.play().catch(e => console.warn(e)); 
+                 }
+             }
+
+
+            updateProjectiles(deltaTime) {
+                 const canvasWidth = this.ui.canvas?.width;
+                 const canvasHeight = this.ui.canvas?.height;
+                 if (!canvasWidth || !canvasHeight) return;
+                 const currentProjectiles = this.projectiles[this.currentDimension];
+                 for (let i = currentProjectiles.length - 1; i >= 0; i--) {
+                     const proj = currentProjectiles[i];
+                     proj.x += proj.vx * deltaTime;
+                     proj.y += proj.vy * deltaTime;
+                     if (proj.type === 'nebulaShot') {
+                         const angleToTarget = Math.atan2(proj.targetY - proj.y, proj.targetX - proj.x);
+                         const homingForce = 0.05; 
+                         proj.vx += Math.cos(angleToTarget) * this.enemyTypes.nebulaStalker.projectileSpeed * homingForce * deltaTime;
+                         proj.vy += Math.sin(angleToTarget) * this.enemyTypes.nebulaStalker.projectileSpeed * homingForce * deltaTime;
+                          const currentSpeedSq = proj.vx*proj.vx + proj.vy*proj.vy;
+                          const maxSpeedSq = (this.enemyTypes.nebulaStalker.projectileSpeed * 1.2)**2; 
+                          if(currentSpeedSq > maxSpeedSq){
+                              const scale = Math.sqrt(maxSpeedSq / currentSpeedSq);
+                              proj.vx *= scale;
+                              proj.vy *= scale;
+                          }
+                     }
+                      const margin = 50; 
+                     if (proj.x < -margin || proj.x > canvasWidth + margin || proj.y < -margin || proj.y > canvasHeight + margin) {
+                         currentProjectiles.splice(i, 1);
+                     }
+                 }
+             }
+
+             updateTowers(deltaTime) {
+                 const currentTowers = this.towers[this.currentDimension];
+                 for (let i = currentTowers.length - 1; i >= 0; i--) {
+                     const tower = currentTowers[i];
+                     tower.timeSinceLastShot += deltaTime;
+                     let nearestEnemy = null;
+                     let minDistSq = this.towerRange * this.towerRange; 
+                     this.enemies[this.currentDimension].forEach(enemy => { // Check enemies in current dimension
+                         if(!enemy || typeof enemy.x !== 'number' || typeof enemy.y !== 'number') return;
+                         const distSq = (enemy.x - tower.x)**2 + (enemy.y - tower.y)**2;
+                         if (distSq < minDistSq) {
+                             minDistSq = distSq;
+                             nearestEnemy = enemy;
+                         }
+                     });
+                     const currentTowerFireInterval = 1 / (this.solarFlare.active ? this.towerFireRate / 1.5 : this.towerFireRate); 
+                     if (nearestEnemy && tower.timeSinceLastShot >= currentTowerFireInterval) {
+                         const angle = Math.atan2(nearestEnemy.y - tower.y, nearestEnemy.x - tower.x);
+                         const vx = Math.cos(angle) * this.projectileSpeed; 
+                         const vy = Math.sin(angle) * this.projectileSpeed;
+                         this.projectiles[this.currentDimension].push({ // Add to current dimension
+                             x: tower.x, y: tower.y, size: 5, vx, vy,
+                             type: 'towerShot', source: 'turret'
+                         });
+                         const sound = this.ui.sounds.turretShoot;
+                         if (sound) {
+                             const clone = sound.cloneNode();
+                             clone.volume = sound.volume * 0.8; 
+                             clone.play().catch(e => console.warn("Tower shoot sound clone play failed", e));
+                         }
+                         tower.timeSinceLastShot = 0; 
+                     }
+                 }
+             }
+
+             updateHazards(deltaTime) { // This handles asteroids, debris, mines (now dimension-specific) and solar flare (global)
+                 const canvasWidth = this.ui.canvas?.width;
+                 const canvasHeight = this.ui.canvas?.height;
+                 if (!canvasWidth || !canvasHeight) return;
+
+                 const currentAsteroids = this.asteroids[this.currentDimension];
+                 for (let i = currentAsteroids.length - 1; i >= 0; i--) {
+                     const asteroid = currentAsteroids[i];
+                     asteroid.x += asteroid.vx * deltaTime;
+                     asteroid.y += asteroid.vy * deltaTime;
+                     asteroid.rotation += asteroid.rotationSpeed * deltaTime;
+                      const margin = this.asteroidSize * 2;
+                      if (asteroid.x < -margin || asteroid.x > canvasWidth + margin ||
+                          asteroid.y < -margin || asteroid.y > canvasHeight + margin) {
+                          currentAsteroids.splice(i, 1);
+                      }
+                 }
+
+                 const currentDebris = this.debris[this.currentDimension];
+                  for (let i = currentDebris.length - 1; i >= 0; i--) {
+                      const particle = currentDebris[i];
+                      particle.x += particle.vx * deltaTime;
+                      particle.y += particle.vy * deltaTime;
+                      particle.lifespan -= deltaTime;
+                      const pMargin = this.debrisSize * 2;
+                      if (particle.lifespan <= 0 ||
+                          particle.x < -pMargin || particle.x > canvasWidth + pMargin ||
+                          particle.y < -pMargin || particle.y > canvasHeight + pMargin) {
+                          currentDebris.splice(i, 1);
+                      }
+                  }
+
+                 const currentMines = this.mines[this.currentDimension];
+                 for (let i = currentMines.length - 1; i >= 0; i--) {
+                      const mine = currentMines[i];
+                      mine.lifespan -= deltaTime;
+                      if (mine.warningTime > 0 && mine.lifespan <= mine.warningTime) {
+                         mine.isWarning = true; 
+                      }
+                      if (mine.lifespan <= 0) {
+                          this.triggerMineExplosion(mine); // Pass the mine object
+                          currentMines.splice(i, 1);
+                      }
+                  }
+
+                 let hazardWarning = "";
+                 if (this.solarFlare.warningTime > 0) {
+                     this.solarFlare.warningTime -= deltaTime;
+                     hazardWarning = `Solar Flare Warning: ${Math.ceil(this.solarFlare.warningTime)}s`;
+                     if (this.solarFlare.warningTime <= 0) {
+                         this.solarFlare.active = true;
+                         this.solarFlare.duration = 7; 
+                         this.solarFlare.warningTime = 0; 
+                     }
+                 } else if (this.solarFlare.active) {
+                     this.solarFlare.duration -= deltaTime;
+                     hazardWarning = `SOLAR FLARE ACTIVE: ${Math.ceil(this.solarFlare.duration)}s`;
+                     if (this.solarFlare.duration <= 0) {
+                         this.solarFlare.active = false;
+                         this.solarFlare.duration = 0;
+                     }
+                 }
+                 this.currentHazardWarning = hazardWarning; 
+
+                 this.timeSinceLastHazard += deltaTime;
+                 if (this.timeSinceLastHazard >= (Math.random() * 8 + 12)) { 
+                     const hazardType = Math.random();
+                     if (hazardType < 0.4) { 
+                         this.spawnAsteroid(); // Spawns into current dimension
+                     } else if (hazardType < 0.7) { 
+                         this.spawnDebris(); // Spawns into current dimension
+                     } else { 
+                         this.triggerSolarFlare(); // Solar flare is global
+                     }
+                     this.timeSinceLastHazard = 0;
+                 }
+             }
+
+             triggerMineExplosion(mine) { // Mine object is passed
+                 this.ui.sounds.mineExplode?.play().catch(e => console.warn(e));
+                 const explosionRadiusSq = mine.explosionRadius * mine.explosionRadius;
+                 if (this.playerHealth > 0 && this.player) {
+                    const distSq = (this.player.x - mine.x)**2 + (this.player.y - mine.y)**2;
+                    if (distSq < explosionRadiusSq) {
+                        this.playerHealth -= mine.damageP;
+                         if (this.playerHealth <= 0) {
+                            this.playerHealth = 0;
+                            this.gameOver = true; 
+                         }
+                    }
+                 }
+                 this.towers[this.currentDimension].forEach((tower) => { // Check towers in current dimension
+                      const distSq = (tower.x - mine.x)**2 + (tower.y - mine.y)**2;
+                      if (distSq < explosionRadiusSq) {
+                          tower.health -= mine.damageT;
+                          // Tower removal handled in handleCollisions if health <= 0
+                      }
+                 });
+                 this.enemies[this.currentDimension].forEach((enemy) => { // Check enemies in current dimension
+                      const distSq = (enemy.x - mine.x)**2 + (enemy.y - mine.y)**2;
+                      if (distSq < explosionRadiusSq) {
+                          enemy.health -= mine.damageE;
+                          // Enemy removal handled in handleCollisions if health <= 0
+                      }
+                 });
+             }
+
+
+            handleCollisions() {
+                 let playerHitThisFrame = false; 
+                 let destroyedTowersIndices = new Set(); 
+                 let destroyedEnemiesIndices = new Set(); 
+                 let destroyedProjectilesIndices = new Set(); 
+                 let destroyedAsteroidsIndices = new Set();
+                 let destroyedDebrisIndices = new Set();
+                 let collectedCoinsIndices = new Set();
+                 let destroyedMinesIndices = new Set(); 
+
+                 // Get current dimension's entities
+                 const currentProjectiles = this.projectiles[this.currentDimension];
+                 const currentEnemies = this.enemies[this.currentDimension];
+                 const currentTowers = this.towers[this.currentDimension];
+                 const currentAsteroids = this.asteroids[this.currentDimension];
+                 const currentDebris = this.debris[this.currentDimension];
+                 const currentCoins = this.coins[this.currentDimension];
+                 const currentMines = this.mines[this.currentDimension];
+
+
+                 const checkCollision = (x1, y1, x2, y2, size1, size2) => {
+                     const dx = x1 - x2;
+                     const dy = y1 - y2;
+                     const distSq = dx * dx + dy * dy;
+                     const collisionDist = (size1 / 2 + size2 / 2);
+                     return distSq < collisionDist * collisionDist;
+                 };
+
+                 currentProjectiles.forEach((proj, i) => {
+                    if (!proj || destroyedProjectilesIndices.has(i)) return;
+                    if (proj.source === 'player' || proj.source === 'turret') {
+                         currentEnemies.forEach((enemy, j) => {
+                            if (!enemy || destroyedEnemiesIndices.has(j)) return;
+                            if (checkCollision(proj.x, proj.y, enemy.x, enemy.y, proj.size, this.enemySize)) {
+                                enemy.health -= this.projectileDamage;
+                                destroyedProjectilesIndices.add(i); 
+                                if (enemy.health <= 0) {
+                                    destroyedEnemiesIndices.add(j); 
+                                    this.dropCoin(enemy.x, enemy.y); // Drops into current dimension
+                                    this.ui.sounds.enemyDeath.play().catch(e => console.warn(e));
+                                }
+                                return; 
+                            }
+                         });
+                    }
+                 });
+
+                  currentProjectiles.forEach((proj, i) => {
+                      if (!proj || destroyedProjectilesIndices.has(i)) return;
+                      if (proj.source === 'player' || proj.source === 'turret') {
+                         currentAsteroids.forEach((asteroid, j) => {
+                             if (!asteroid || destroyedAsteroidsIndices.has(j)) return;
+                             if (checkCollision(proj.x, proj.y, asteroid.x, asteroid.y, proj.size, this.asteroidSize)) {
+                                 asteroid.health -= this.projectileDamage;
+                                 destroyedProjectilesIndices.add(i); 
+                                 if (asteroid.health <= 0) {
+                                     destroyedAsteroidsIndices.add(j); 
+                                     this.playerHealth = Math.min(this.maxPlayerHealth, this.playerHealth + 1);
+                                     this.ui.sounds.asteroidHit.play().catch(e => console.warn(e));
+                                 } else {
+                                      this.ui.sounds.asteroidHit.play().catch(e => console.warn(e)); 
+                                 }
+                                 return; 
+                             }
+                         });
+                     }
+                  });
+
+                   currentProjectiles.forEach((proj, i) => {
+                       if (!proj || destroyedProjectilesIndices.has(i)) return;
+                       if (proj.source === 'player' || proj.source === 'turret') { 
+                           currentMines.forEach((mine, j) => {
+                               if (!mine || destroyedMinesIndices.has(j) || mine.lifespan <= 0) return; 
+                               if (checkCollision(proj.x, proj.y, mine.x, mine.y, proj.size, mine.radius * 2)) {
+                                   destroyedProjectilesIndices.add(i); 
+                                   destroyedMinesIndices.add(j); 
+                                   return; 
+                               }
+                           });
+                       }
+                   });
+
+                   if (this.playerHealth > 0 && this.player && !playerHitThisFrame) {
+                      currentProjectiles.forEach((proj, i) => {
+                           if (!proj || destroyedProjectilesIndices.has(i)) return;
+                           if (proj.source === 'enemy') {
+                               if (checkCollision(proj.x, proj.y, this.player.x, this.player.y, proj.size, this.player.size)) {
+                                   const damage = 1; 
+                                   this.playerHealth -= damage;
+                                   playerHitThisFrame = true; 
+                                   destroyedProjectilesIndices.add(i); 
+                                   this.ui.sounds.asteroidHit.play().catch(e => console.warn(e)); 
+                                   if (this.playerHealth <= 0) this.gameOver = true; 
+                                   return; 
+                               }
+                           }
+                       });
+                   }
+
+                   currentProjectiles.forEach((proj, i) => {
+                       if (!proj || destroyedProjectilesIndices.has(i)) return;
+                       if (proj.source === 'enemy') {
+                           currentTowers.forEach((tower, j) => {
+                               if (!tower || destroyedTowersIndices.has(j)) return;
+                               if (checkCollision(proj.x, proj.y, tower.x, tower.y, proj.size, this.towerSize)) {
+                                   const damage = 1; 
+                                   tower.health -= damage;
+                                   destroyedProjectilesIndices.add(i); 
+                                   if (tower.health <= 0) {
+                                       destroyedTowersIndices.add(j); 
+                                       this.ui.sounds.turretDeath.play().catch(e => console.warn(e));
+                                   }
+                                   return; 
+                               }
+                           });
+                       }
+                   });
+
+                  if (this.playerHealth > 0 && this.player && !playerHitThisFrame) {
+                     currentEnemies.forEach((enemy, i) => {
+                          if (!enemy || destroyedEnemiesIndices.has(i)) return;
+                          if (checkCollision(enemy.x, enemy.y, this.player.x, this.player.y, this.enemySize, this.player.size)) {
+                             const damage = enemy.damageToPlayer || 1; 
+                             this.playerHealth -= damage;
+                             playerHitThisFrame = true;
+                             destroyedEnemiesIndices.add(i); 
+                             this.ui.sounds.enemyDeath.play().catch(e => console.warn(e)); 
+                             this.ui.sounds.asteroidHit.play().catch(e => console.warn(e)); 
+                             if (this.playerHealth <= 0) this.gameOver = true;
+                          }
+                      });
+                  }
+
+                 currentEnemies.forEach((enemy, i) => {
+                      if (!enemy || destroyedEnemiesIndices.has(i)) return;
+                      currentTowers.forEach((tower, j) => {
+                          if (!tower || destroyedTowersIndices.has(j)) return;
+                           if (checkCollision(enemy.x, enemy.y, tower.x, tower.y, this.enemySize, this.towerSize)) {
+                              const damage = enemy.damageToTower || 1; 
+                              tower.health -= damage;
+                              destroyedEnemiesIndices.add(i); 
+                              this.ui.sounds.enemyDeath.play().catch(e => console.warn(e)); 
+                              if (tower.health <= 0) {
+                                  destroyedTowersIndices.add(j); 
+                                  this.ui.sounds.turretDeath.play().catch(e => console.warn(e));
+                              }
+                              return; 
+                           }
+                      });
+                  });
+
+                   if (this.playerHealth > 0 && this.player) {
+                      currentCoins.forEach((coin, i) => {
+                           if (!coin || collectedCoinsIndices.has(i)) return;
+                           if (checkCollision(this.player.x, this.player.y, coin.x, coin.y, this.player.size, this.coinSize)) {
+                              this.coinCount++; // Global coin count
+                              collectedCoinsIndices.add(i); 
+                          }
+                      });
+                   }
+
+                  if (this.playerHealth > 0 && this.player && !playerHitThisFrame) {
+                     currentAsteroids.forEach((asteroid, i) => {
+                         if (!asteroid || destroyedAsteroidsIndices.has(i)) return;
+                          if (checkCollision(asteroid.x, asteroid.y, this.player.x, this.player.y, this.asteroidSize, this.player.size)) {
+                             this.playerHealth -= 2; 
+                             playerHitThisFrame = true;
+                             destroyedAsteroidsIndices.add(i); 
+                             this.ui.sounds.asteroidHit.play().catch(e => console.warn(e)); 
+                             if (this.playerHealth <= 0) this.gameOver = true;
+                          }
+                      });
+                  }
+
+                  currentAsteroids.forEach((asteroid, i) => {
+                       if (!asteroid || destroyedAsteroidsIndices.has(i)) return;
+                       currentTowers.forEach((tower, j) => {
+                           if (!tower || destroyedTowersIndices.has(j)) return;
+                           if (checkCollision(asteroid.x, asteroid.y, tower.x, tower.y, this.asteroidSize, this.towerSize)) {
+                               tower.health -= 2; 
+                               destroyedAsteroidsIndices.add(i); 
+                               this.ui.sounds.asteroidHit.play().catch(e => console.warn(e));
+                               if (tower.health <= 0) {
+                                   destroyedTowersIndices.add(j); 
+                                   this.ui.sounds.turretDeath.play().catch(e => console.warn(e));
+                               }
+                               return; 
+                           }
+                       });
+                   });
+
+                    if (this.playerHealth > 0 && this.player && !playerHitThisFrame) {
+                       currentDebris.forEach((particle, i) => {
+                            if (!particle || destroyedDebrisIndices.has(i)) return;
+                           if (checkCollision(particle.x, particle.y, this.player.x, this.player.y, this.debrisSize, this.player.size)) {
+                               this.playerHealth -= 0.25; 
+                               playerHitThisFrame = true;
+                               destroyedDebrisIndices.add(i); 
+                               if (this.playerHealth <= 0) this.gameOver = true;
+                           }
+                       });
+                   }
+
+                    currentDebris.forEach((particle, i) => {
+                        if (!particle || destroyedDebrisIndices.has(i)) return;
+                        currentTowers.forEach((tower, j) => {
+                            if (!tower || destroyedTowersIndices.has(j)) return;
+                            if (checkCollision(particle.x, particle.y, tower.x, tower.y, this.debrisSize, this.towerSize)) {
+                                tower.health -= 0.2; 
+                                destroyedDebrisIndices.add(i); 
+                                if (tower.health <= 0) {
+                                     destroyedTowersIndices.add(j); 
+                                     this.ui.sounds.turretDeath.play().catch(e => console.warn(e));
+                                }
+                                return; 
+                            }
+                        });
+                    });
+
+                 const removeMarked = (list, markedSet) => {
+                    if (markedSet.size === 0) return list;
+                    const indicesToRemove = Array.from(markedSet).sort((a, b) => b - a); 
+                    indicesToRemove.forEach(index => {
+                        list.splice(index, 1);
+                    });
+                    return list; 
+                 };
+
+                 this.projectiles[this.currentDimension] = removeMarked(currentProjectiles, destroyedProjectilesIndices);
+                 this.enemies[this.currentDimension] = removeMarked(currentEnemies, destroyedEnemiesIndices);
+                 this.towers[this.currentDimension] = removeMarked(currentTowers, destroyedTowersIndices);
+                 this.asteroids[this.currentDimension] = removeMarked(currentAsteroids, destroyedAsteroidsIndices);
+                 this.debris[this.currentDimension] = removeMarked(currentDebris, destroyedDebrisIndices);
+                 this.coins[this.currentDimension] = removeMarked(currentCoins, collectedCoinsIndices);
+                 this.mines[this.currentDimension] = removeMarked(currentMines, destroyedMinesIndices);
+             }
+
+
+            update(timestamp) {
+                if (this.gameOver) return; 
+                 const ctx = this.getCtx();
+                 if (!ctx) {
+                    console.error("Canvas context not available. Stopping game update.");
+                    this.gameOver = true; 
+                    return;
+                 }
+                 const currentTime = performance.now();
+                 const deltaTime = (currentTime - (this.lastFrameTime || currentTime)) / 1000;
+                 this.lastFrameTime = currentTime;
+                 if(this.startTime === null) this.startTime = currentTime;
+                 this.elapsedTime = (currentTime - this.startTime) / 1000;
+                 const maxDeltaTime = 0.1; 
+                 const clampedDeltaTime = Math.min(deltaTime, maxDeltaTime);
+
+                this.movePlayer(clampedDeltaTime);
+                this.spawnEnemy(clampedDeltaTime); 
+                this.updateEnemies(clampedDeltaTime);
+                this.updateProjectiles(clampedDeltaTime);
+                this.updateTowers(clampedDeltaTime);
+                this.updateHazards(clampedDeltaTime); 
+
+                 const currentFireInterval = 1 / (this.solarFlare.active ? this.fireRate / 1.5 : this.fireRate);
+                 this.timeSinceLastShot += clampedDeltaTime; 
+                 if (this.isShooting && this.timeSinceLastShot >= currentFireInterval) {
+                     this.shootProjectile();
+                     this.timeSinceLastShot = 0; 
+                 }
+                this.handleCollisions(); 
+                 if (this.gameOver) {
+                      if(this.playerHealth < 0) this.playerHealth = 0; 
+                      this.ui.sounds.shipDestroy.play().catch(e => console.warn(e));
+                     this.ui.endGame(); 
+                     return; 
+                 }
+                const displayedHealth = Math.max(0, Math.ceil(this.playerHealth));
+                this.ui.updateHUD(this.elapsedTime, this.coinCount, this.fireRate, displayedHealth, this.currentHazardWarning);
+            }
+
+            draw() {
+                const ctx = this.getCtx();
+                if (!ctx || !this.allImagesLoaded) {
+                      if (!this.allImagesLoaded && ctx) {
+                           ctx.fillStyle = "#0a0a1f";
+                           ctx.fillRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+                           ctx.fillStyle = "white";
+                           ctx.font = "20px Orbitron";
+                           ctx.textAlign = "center";
+                           ctx.fillText("Loading Assets...", this.ui.canvas.width / 2, this.ui.canvas.height / 2);
+                      } else if(!ctx){
+                           console.warn("Draw called without context.");
+                      }
+                     return; 
+                 }
+                 if (this.gameOver) return; 
+
+                ctx.clearRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+
+                // Draw Background for the current dimension
+                const bgImg = this.activeBackgroundImage; // Use the centrally managed active background
+                if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+                    ctx.drawImage(bgImg, 0, 0, this.ui.canvas.width, this.ui.canvas.height);
+                } else {
+                     ctx.fillStyle = (this.currentDimension === 0) ? "#000010" : "#100000"; // Different fallback for visibility
+                     ctx.fillRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+                }
+
+                 const coinImg = this.images.coin;
+                 if (coinImg && coinImg.complete && coinImg.naturalWidth > 0) {
+                    this.coins[this.currentDimension].forEach(coin => { // Draw current dimension's coins
+                         ctx.drawImage(coinImg, coin.x - this.coinSize / 2, coin.y - this.coinSize / 2, this.coinSize, this.coinSize);
+                    });
+                 } else { 
+                    ctx.fillStyle = "yellow";
+                    this.coins[this.currentDimension].forEach(coin => {
+                         ctx.beginPath();
+                         ctx.arc(coin.x, coin.y, this.coinSize / 2, 0, Math.PI * 2);
+                         ctx.fill();
+                    });
+                 }
+
+                 const towerImg = this.images.tower;
+                 this.towers[this.currentDimension].forEach(tower => { // Draw current dimension's towers
+                    if (towerImg && towerImg.complete && towerImg.naturalWidth > 0) {
+                         ctx.drawImage(towerImg, tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
+                    } else { 
+                        ctx.fillStyle = "grey";
+                        ctx.fillRect(tower.x - this.towerSize / 2, tower.y - this.towerSize / 2, this.towerSize, this.towerSize);
+                    }
+                    const barWidth = this.towerSize * 0.8;
+                    const barHeight = 5;
+                    const barX = tower.x - barWidth / 2;
+                    const barY = tower.y - this.towerSize / 2 - barHeight - 5; 
+                    const healthPercent = Math.max(0, tower.health / this.towerHealth);
+                    ctx.fillStyle = "#555"; 
+                    ctx.fillRect(barX, barY, barWidth, barHeight);
+                    ctx.fillStyle = `rgb(${Math.round(255 * (1 - healthPercent))}, ${Math.round(255 * healthPercent)}, 0)`; 
+                    ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+                    ctx.strokeStyle = "#333"; 
+                    ctx.strokeRect(barX, barY, barWidth, barHeight);
+                });
+
+                 const playerImg = this.images.player;
+                 if (this.playerHealth > 0 && this.player) {
+                     const angle = Math.atan2(this.mouseY - this.player.y, this.mouseX - this.player.x);
+                     ctx.save();
+                     ctx.translate(this.player.x, this.player.y);
+                     ctx.rotate(angle); 
+                     if (playerImg && playerImg.complete && playerImg.naturalWidth > 0) {
+                         ctx.drawImage(playerImg, -this.player.size / 2, -this.player.size / 2, this.player.size, this.player.size);
+                     } else { 
+                          ctx.fillStyle = "blue";
+                          ctx.beginPath();
+                          ctx.moveTo(this.player.size * 0.6, 0); 
+                          ctx.lineTo(-this.player.size * 0.4, -this.player.size * 0.4); 
+                          ctx.lineTo(-this.player.size * 0.4, this.player.size * 0.4); 
+                          ctx.closePath();
+                          ctx.fill();
+                     }
+                     ctx.restore();
+                 }
+
+                 this.enemies[this.currentDimension].forEach(enemy => { // Draw current dimension's enemies
+                      let imgKey = enemy.type; 
+                      let enemyImg = this.images[imgKey];
+                      let drawFallback = !enemyImg || !enemyImg.complete || enemyImg.naturalWidth === 0;
+                     ctx.save();
+                     ctx.translate(enemy.x, enemy.y);
+                     if (!drawFallback) {
+                         ctx.drawImage(enemyImg, -this.enemySize / 2, -this.enemySize / 2, this.enemySize, this.enemySize);
+                     } else { 
+                         let fallbackColor = "red"; 
+                         if (enemy.type === 'nebulaStalker') fallbackColor = "purple";
+                         else if (enemy.type === 'voidMineLayer') fallbackColor = "darkred";
+                         ctx.fillStyle = fallbackColor;
+                         ctx.fillRect(-this.enemySize / 2, -this.enemySize / 2, this.enemySize, this.enemySize);
+                     }
+                     ctx.restore();
+                 });
+
+                  const asteroidImg = this.images.asteroid;
+                 this.asteroids[this.currentDimension].forEach(asteroid => { // Draw current dimension's asteroids
+                    ctx.save();
+                    ctx.translate(asteroid.x, asteroid.y);
+                    ctx.rotate(asteroid.rotation);
+                    if (asteroidImg && asteroidImg.complete && asteroidImg.naturalWidth > 0) {
+                         ctx.drawImage(asteroidImg, -this.asteroidSize / 2, -this.asteroidSize / 2, this.asteroidSize, this.asteroidSize);
+                    } else { 
+                        ctx.fillStyle = "dimgray";
+                        ctx.fillRect(-this.asteroidSize / 2, -this.asteroidSize / 2, this.asteroidSize, this.asteroidSize);
+                    }
+                     ctx.restore();
+                });
+
+                 ctx.fillStyle = "#808080"; 
+                 this.debris[this.currentDimension].forEach(particle => { // Draw current dimension's debris
+                     ctx.fillRect(particle.x - this.debrisSize / 2, particle.y - this.debrisSize / 2, this.debrisSize, this.debrisSize);
+                 });
+
+                 const mineImg = this.images.mine; 
+                 this.mines[this.currentDimension].forEach(mine => { // Draw current dimension's mines
+                     ctx.save();
+                     ctx.translate(mine.x, mine.y);
+                     const drawMineFallback = !mineImg || !mineImg.complete || mineImg.naturalWidth === 0;
+                     if (!drawMineFallback) {
+                          if (mine.isWarning) {
+                             ctx.globalAlpha = (Math.sin(this.elapsedTime * 15) + 1) / 2 * 0.5 + 0.5; 
+                          }
+                         ctx.drawImage(mineImg, -mine.radius, -mine.radius, mine.radius * 2, mine.radius * 2);
+                         ctx.globalAlpha = 1.0; 
+                     } else { 
+                         if (mine.isWarning) {
+                              ctx.fillStyle = (Math.floor(this.elapsedTime * 10) % 2 === 0) ? "#FF8C00" : "#FF0000"; 
+                          } else {
+                              ctx.fillStyle = "#8B0000"; 
+                          }
+                         ctx.beginPath();
+                         ctx.arc(0, 0, mine.radius, 0, Math.PI * 2);
+                         ctx.fill();
+                         ctx.fillStyle = "#FFA500"; 
+                          ctx.beginPath();
+                         ctx.arc(0, 0, mine.radius * 0.4, 0, Math.PI * 2);
+                         ctx.fill();
+                     }
+                     ctx.restore();
+                 });
+
+                this.projectiles[this.currentDimension].forEach(proj => { // Draw current dimension's projectiles
+                    if (proj.source === 'player') ctx.fillStyle = "#00FFFF"; 
+                    else if (proj.source === 'turret') ctx.fillStyle = "#FFFF00"; 
+                    else if (proj.type === 'nebulaShot') ctx.fillStyle = "#FF00FF"; 
+                    else ctx.fillStyle = "white"; 
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, proj.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                if (this.solarFlare.active) {
+                    const flareMaxDuration = 7.0; 
+                    const progress = Math.max(0, this.solarFlare.duration / flareMaxDuration);
+                    const alpha = Math.sin(progress * Math.PI) * 0.3; 
+                    ctx.fillStyle = `rgba(255, 100, 0, ${alpha})`; 
+                    ctx.fillRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+                } else if (this.solarFlare.warningTime > 0) {
+                     const warnAlpha = (Math.sin(this.elapsedTime * 10) + 1) / 2 * 0.6; 
+                     ctx.strokeStyle = `rgba(255, 0, 0, ${warnAlpha})`;
+                     ctx.lineWidth = 5;
+                     ctx.strokeRect(0, 0, this.ui.canvas.width, this.ui.canvas.height);
+                     ctx.lineWidth = 1; 
+                 }
+            }
+        }
+
+        class Game {
+            constructor() {
+                this.ui = new GameUI();
+                this.logic = new GameLogic(this.ui); 
+                this.animationFrameId = null;
+                this.isPaused = false; 
+                this.isRunning = false; 
+            }
+
+            prepareGame() {
+                this.assignButtons();
+                 this.ui.mainMenu(); 
+            }
+
+             handleResize() {
+                 this.ui.adjustGameContainerLayout(); 
+             }
+
+            startGame() {
+                this.stopGameLoop();
+                console.log("Starting game...");
+                this.logic.reset(); 
+                 if (!this.logic.allImagesLoaded) {
+                     console.log("Waiting for images to load...");
+                      let loadCheckInterval = setInterval(() => {
+                          if (this.logic.allImagesLoaded) {
+                              clearInterval(loadCheckInterval);
+                              this.finishStartGame(); 
+                          }
+                      }, 100); 
+                 } else {
+                      this.finishStartGame(); 
+                 }
+            }
+
+            finishStartGame() {
+                 console.log("Assets loaded, finishing start game sequence.");
+                 this.ui.startGame(); 
+                 this.isPaused = false;
+                 this.isRunning = true; 
+                 this.logic.startTime = null; 
+                 this.logic.lastFrameTime = performance.now(); 
+                  if (this.logic.getCtx()) {
+                       this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this)); 
+                       console.log("Game loop started.");
+                   } else {
+                       console.error("Cannot start game loop - Canvas Context not available.");
+                       this.isRunning = false;
+                   }
+             }
+
+            stopGameLoop() {
+                 if (this.animationFrameId) {
+                     cancelAnimationFrame(this.animationFrameId);
+                     this.animationFrameId = null;
+                 }
+                 this.isRunning = false;
+                  if (this.logic.moveSoundPlaying) {
+                      this.ui.sounds.shipMove.pause();
+                      this.ui.sounds.shipMove.currentTime = 0;
+                      this.logic.moveSoundPlaying = false;
+                  }
+                 console.log("Game loop stopped.");
+             }
+
+            gameLoop(timestamp) {
+                 if(this.isRunning) { 
+                     this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
+                 } else {
+                     this.animationFrameId = null; 
+                     return; 
+                 }
+                 if (this.isPaused) {
+                     return; 
+                 }
+                  if (this.logic.gameOver) {
+                       if(this.isRunning) { 
+                           this.stopGameLoop();
+                       }
+                       return; 
+                   }
+                 try {
+                    this.logic.update(timestamp);
+                    this.logic.draw();
+                 } catch (error) {
+                      console.error("Error in game loop:", error);
+                      this.stopGameLoop(); 
+                 }
+            }
+
+             pauseGame() {
+                 if (this.isRunning && !this.isPaused) {
+                     this.isPaused = true;
+                      console.log("Game Paused");
+                       if (this.logic.moveSoundPlaying) {
+                           this.ui.sounds.shipMove.pause();
+                       }
+                 }
+             }
+
+             resumeGame() {
+                 if (this.isRunning && this.isPaused) {
+                     this.isPaused = false;
+                     this.logic.lastFrameTime = performance.now();
+                     console.log("Game Resumed");
+                       if (this.logic.isMoving && this.logic.moveSoundPlaying === false) { 
+                           this.ui.sounds.shipMove.play().catch(e => console.warn(e));
+                           this.logic.moveSoundPlaying = true;
+                       }
+                 }
+             }
+
+             handleInstructionsBack() {
+                 this.ui.swapToScreen(this.ui.gameScreen); 
+                 this.resumeGame(); 
+             }
+
+             replaceButtonListener(buttonId, callback) {
+                 const button = document.getElementById(buttonId);
+                 if (button) {
+                    const newButton = button.cloneNode(true); 
+                    button.parentNode.replaceChild(newButton, button);
+                     this.addButtonListenerLogic(newButton, callback); 
+                 } else {
+                      console.warn(`Button with ID "${buttonId}" not found for replacing listener.`);
+                  }
+             }
+
+              addButtonListenerLogic(buttonElement, callback) {
+                 if(!buttonElement) return;
+                 let touchStarted = false;
+                 let touchStartX = 0;
+                 let touchStartY = 0;
+                 const tapThreshold = 10; 
+                 buttonElement.addEventListener("touchstart", (e) => {
+                      e.preventDefault(); 
+                      e.stopPropagation(); 
+                      touchStarted = true;
+                      touchStartX = e.changedTouches[0].clientX;
+                      touchStartY = e.changedTouches[0].clientY;
+                      buttonElement.style.transform = 'translateY(1px) scale(0.98)';
+                  }, { passive: false });
+                  buttonElement.addEventListener("touchend", (e) => {
+                      if(touchStarted){
+                         const touchEndX = e.changedTouches[0].clientX;
+                         const touchEndY = e.changedTouches[0].clientY;
+                         const movedX = Math.abs(touchEndX - touchStartX);
+                         const movedY = Math.abs(touchEndY - touchStartY);
+                         if (movedX < tapThreshold && movedY < tapThreshold) {
+                             e.preventDefault(); 
+                             e.stopPropagation();
+                             callback(e);
+                         }
+                         touchStarted = false;
+                          buttonElement.style.transform = '';
+                      }
+                  }, { passive: false });
+                  buttonElement.addEventListener("click", (e) => {
+                      if (!touchStarted) { 
+                          e.stopPropagation();
+                          callback(e);
+                      }
+                  });
+                  const resetTouch = () => {
+                     if(touchStarted){
+                         touchStarted = false;
+                          buttonElement.style.transform = ''; 
+                     }
+                  }
+                   buttonElement.addEventListener("touchcancel", resetTouch, { passive: false });
+                   buttonElement.addEventListener("touchleave", resetTouch, { passive: false }); 
+             }
+
+            assignButtons() {
+                 const setupButton = (id, callback) => {
+                     const button = document.getElementById(id);
+                     if(button){
+                         this.addButtonListenerLogic(button, callback); 
+                     } else {
+                          console.warn(`Button with ID "${id}" not found.`);
+                      }
+                 };
+
+                setupButton("play-button", () => this.startGame());
+                setupButton("settings-button", () => this.ui.settings());
+                setupButton("instructions-button", () => {
+                    if (this.isRunning && !this.isPaused) {
+                        this.pauseGame();
+                         this.replaceButtonListener("instructions-back-button", () => this.handleInstructionsBack());
+                    } else {
+                         this.replaceButtonListener("instructions-back-button", () => this.ui.mainMenu());
+                     }
+                    this.ui.instructions(); 
+                });
+                setupButton("play-again-button", () => this.startGame());
+                setupButton("settings-back-button", () => this.ui.mainMenu());
+                 setupButton("instructions-back-button", () => this.ui.mainMenu());
+                setupButton("main-menu-button", () => {
+                    this.stopGameLoop(); 
+                    this.ui.mainMenu();
+                });
+                 setupButton("game-menu-button", () => {
+                     if (this.isRunning) { 
+                         this.pauseGame(); 
+                         this.stopGameLoop(); 
+                         this.ui.mainMenu();
+                     }
+                 });
+                 setupButton("game-restart-button", () => {
+                     if (this.isRunning) { 
+                         this.stopGameLoop(); 
+                         this.startGame(); 
+                     }
+                 });
+                 setupButton("game-instructions-button", () => {
+                     if (this.isRunning && !this.isPaused) { 
+                         this.pauseGame();
+                          this.replaceButtonListener("instructions-back-button", () => this.handleInstructionsBack());
+                         this.ui.instructions(); 
+                     }
+                 });
+                 // New button for dimension switching
+                 setupButton("dimension-switch-button", () => {
+                    if (this.isRunning && !this.isPaused) {
+                        this.logic.switchDimension();
+                    }
+                 });
+            }
+        }
+
+        const game = new Game();
+        game.prepareGame();
+        window.addEventListener('resize', () => game.handleResize());
+
+    });
+    </script>
+</body>
+</html>
